@@ -1,0 +1,15 @@
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\bin\Release\net5.0\Photomate.Domain.deps.json
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\bin\Release\net5.0\Photomate.Domain.dll
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\bin\Release\net5.0\ref\Photomate.Domain.dll
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\bin\Release\net5.0\Photomate.Domain.pdb
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\bin\Release\net5.0\Photomate.Model.dll
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\bin\Release\net5.0\Photomate.Model.pdb
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Release\net5.0\Photomate.Domain.csprojAssemblyReference.cache
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Release\net5.0\Photomate.Domain.GeneratedMSBuildEditorConfig.editorconfig
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Release\net5.0\Photomate.Domain.AssemblyInfoInputs.cache
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Release\net5.0\Photomate.Domain.AssemblyInfo.cs
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Release\net5.0\Photomate.Domain.csproj.CoreCompileInputs.cache
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Release\net5.0\Photomate.Domain.csproj.CopyComplete
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Release\net5.0\Photomate.Domain.dll
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Release\net5.0\ref\Photomate.Domain.dll
+F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Release\net5.0\Photomate.Domain.pdb

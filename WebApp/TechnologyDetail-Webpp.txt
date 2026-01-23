@@ -1,0 +1,4 @@
+1. Angular 11
+2. Bootstrap for Design
+3. compressorjs to compress the image
+4. flip-book js

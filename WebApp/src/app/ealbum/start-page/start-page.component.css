@@ -1,0 +1,178 @@
+#business {
+    background: url(../../../assets/img/top_bg.jpg) no-repeat center center;
+  }
+  section {
+    padding: 80px 0;
+}
+.overlay {
+  position: absolute;
+  background: transparent linear-gradient(295deg, #eb0000 0%, #b26968 35%, #808080 80%) 0% 0% no-repeat padding-box;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0.85;
+}
+
+.sliderInnerSection{
+  width: 600px;
+  text-align: center;
+  margin: 140px auto;
+  padding: 40px;
+  background: #fff;
+  border-radius:4px;
+}
+
+.swiper-container {
+  width: 100%;
+  height: 100%;
+
+}
+
+.swiper-slide {
+  text-align: center;
+  font-size: 18px;
+  background: #fff;
+  /* Center slide text vertically */
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+}
+
+.sliderOneAnimationSet{
+  text-align: center;
+}
+.sliderOneAnimationSet img{
+  width: 140px;
+}
+.sliderOneAnimationSet h4{
+  font-size: 27px;
+    font-weight: 300 !important;
+    margin: 55px 0px !important;
+}
+.sliderOneAnimationSet h3{
+  font-size: 42px !important;
+  margin: 55px 0px !important;
+  font-weight: 500 !important;
+  color: #c90000;
+}
+.slidertwoAnimationSet{
+  display: flex;
+}
+
+.leftTextArea{
+  width: 5%;
+  padding-right: 56px;
+}
+.leftTextArea h1{
+  font-size: 22px;
+  font-weight: 400 !important;
+  text-align: center;
+  display: inline-block;
+}
+.middleTextArea{
+  width: 50%;
+}
+.middleWarepostion{
+  position: absolute;
+  top: 50%;
+  transform: translate(0%, -50%);
+}
+.middleWarepostion h4{
+  font-size: 20px;
+  font-weight: 500 !important;
+  padding-bottom: 25px;
+}
+.middleWarepostion h3{
+  font-size: 52px !important;
+    font-weight: 500 !important;
+    color: #c90000;
+}
+.rightTextArea{
+  width: 45%;
+}
+.animate__delay-7s{
+  display: inline-block;
+  animation-duration: 5s; /* don't forget to set a duration! */
+  --animate-delay: 0.5s;
+}
+.animate__delay-8s{
+  --animate-delay: 0.5s;
+  animation-duration: 5s; /* don't forget to set a duration! */
+}
+
+.uploadfilecontainer {
+  background-image: url("../../../assets/img/cloud-img.png");
+  background-repeat: no-repeat;
+  background-size: 100px;
+  background-position: center;
+  height: 200px;
+  width: 80%;
+  margin: 20px auto;
+  border: 2px dashed #1C8ADB;
+  border-radius: 10px;
+}
+
+.uploadfilecontainer:hover {
+  cursor: pointer;
+  background-color: #9ecbec !important;
+  opacity: 0.8;
+}
+
+.files-list {
+  display: flex;
+  justify-content: space-between;
+  width: 80%;
+  margin: 10px auto;
+  background: #ffffff;
+  border: 1px dashed;
+  border-radius: 12px;
+  padding: 5px;
+  color: #1c8adb;
+}
+
+.files-list .delete-file {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.files-list .delete-file img {
+  width: 30px;
+}
+.bodylistcard{
+
+  border-radius: 4px;
+  margin-top: 0px;
+}
+
+
+.card .card-title{
+  padding-top: 0px !important;
+}
+
+
+
+.file-iconset{
+  font-size: 24px;
+}
+.classmore{
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent !important;
+}
+.dropify-wrapper{
+  height: 150px !important;
+}

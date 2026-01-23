@@ -1,0 +1,170 @@
+#business {
+    background: url(../../../assets/img/top_bg.jpg) no-repeat center center;
+  }
+  section {
+    padding: 80px 0;
+}
+.overlay {
+  position: absolute;
+  background: transparent linear-gradient(295deg, #eb0000 0%, #b26968 35%, #808080 80%) 0% 0% no-repeat padding-box;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0.85;
+}
+
+.sliderInnerSection{
+  width: 600px;
+  text-align: center;
+  margin: 140px auto;
+  padding: 40px;
+  background: #fff;
+  border-radius:4px;
+}
+
+.swiper-container {
+  width: 100%;
+  height: 100%;
+
+}
+
+.swiper-slide {
+  text-align: center;
+  font-size: 18px;
+  background: #fff;
+  /* Center slide text vertically */
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+}
+
+.template2{
+  display: flex;
+  
+}
+.logoarea{
+  width: 20%;
+}
+.containTitletemplate2{
+  width: 80%;
+}
+.logoarea img{
+  width: 100px ;
+}
+.containTitletemplate2 h4{
+  font-size: 24px;
+  font-weight: 500 !important;
+  padding-bottom: 25px;
+}
+.containTitle h3{
+  font-size: 52px !important;
+  font-weight: 500 !important;
+  color: #c90000;
+  margin-top: 90px !important;
+}
+.slidertwoAnimationSet{
+  display: flex;
+}
+.leftanimation2{
+  width: 40%;
+}
+.leftanimation2 img{
+  width: 100%;
+}
+.rightanimation2{
+  width: 60%;
+}
+.rightanimation2 h1{
+  font-size: 20px;
+  font-weight: 500 !important;
+  padding-bottom: 25px;
+  text-transform: uppercase;
+}
+.rightanimation2 h2{
+  font-size: 20px;
+  font-weight: 500 !important;
+  padding-bottom: 25px;
+  padding-top: 60px;
+
+}
+.rightanimation2 h3{
+  font-size: 52px !important;
+  font-weight: 500 !important;
+  color: #c90000;
+  margin-top: 50px !important;
+}
+.animate__delay-7s{
+  display: inline-block;
+  animation-duration: 5s; /* don't forget to set a duration! */
+  --animate-delay: 0.5s;
+}
+.animate__delay-8s{
+  --animate-delay: 0.7s;
+  animation-duration: 7s; /* don't forget to set a duration! */
+}
+
+
+
+
+.lastpageTemplate{
+display:flex;
+align-items: center;
+  justify-content: center;
+}
+.logolast{
+  width: 20%;
+}
+.logolast img{
+  width: 100px;
+}
+.containlast{
+  width: 60%;
+}
+.containlast h5{
+  font-size: 18px !important;
+  font-weight: 400 !important;
+  margin-bottom: 30px !important;
+  color: #ca3434;
+}
+.profilelast{
+  width: 20%;
+}
+.socialIcons ul{
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.socialIcons ul li{
+  display: inline-block;
+  padding: 5px;
+}
+.facebookicontem{
+  width: 32px;
+  padding: 3px 7px;
+  border: 1px solid #3284dc;
+  border-radius: 50%;
+  font-size: 16px;
+  background: #3284dc;
+  color: #fff;
+  text-decoration: none;
+}
+.instagramicontem{
+  width: 32px;
+  padding: 3px 7px;
+  border: 1px solid #dc3545;
+  border-radius: 50%;
+  font-size: 16px;
+  background: #dc3545;
+  color: #fff;
+  text-decoration: none;
+}

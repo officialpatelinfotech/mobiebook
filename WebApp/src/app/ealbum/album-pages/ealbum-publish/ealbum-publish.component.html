@@ -1,0 +1,30 @@
+<div class="containOfstteper text-center">
+    <button class="btn waves-effect waves-light btn-dark privioBtnset" (click)="preview()"><i class="ti-book"></i>
+        Preview</button>
+</div>
+<button class="btn waves-effect waves-light btn-dark privioBtnset" (click)="previous()">
+    Previous</button>
+<button *ngIf="isPublished != true" class="btn waves-effect waves-light btn-danger SaveAndNext"
+    (click)="confirmation()"><i class=" ti-announcement"></i> Publish
+</button>
+<button type="button" *ngIf="isPublished == true" class="btn waves-effect waves-light btn-danger "
+    (click)="goToMainPage()" style="float: right;">Back To Main <i class="ti-arrow-right"></i></button>
+
+    <div class="fullwidthModol" *ngIf="popUpEalbum == true">
+    <div class="full widthModel">
+        <div class="btnclosemodel" style="z-index: 999;">
+            <!-- <button type="button" class="btn btn-circle btn-success btncloseIcon" (click)="closeEalbumPopup()">
+                    <i class="icon-close"></i>
+                </button> -->
+            <span data-name="btnClose" title="Close" (click)="closeEalbumPopup()">
+                <i class="close material-icons flipbook-icon-material flipbook-menu-btn" title="Close"
+                    style="width: 44px; font-size: 28px; color: rgb(238, 238, 238); background: rgba(0, 0, 0, 0.267);">close</i>
+            </span>
+        </div>
+        <div style="padding-top: 50px;">
+            <app-ealbum-preview #previeAlbum [pages]="albumPages" [albumdetail]="viewAlbum"></app-ealbum-preview>
+        </div>
+
+    </div>
+</div>
+<confirmation-popup></confirmation-popup>

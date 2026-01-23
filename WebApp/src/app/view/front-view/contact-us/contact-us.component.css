@@ -1,0 +1,15 @@
+#business {
+    background: url(../../../../assets/img/top_bg.jpg) no-repeat center center;
+  }
+  section {
+    padding: 80px 0;
+}
+.overlay {
+  position: absolute;
+  background: transparent linear-gradient(295deg, #eb0000 0%, #b26968 35%, #808080 80%) 0% 0% no-repeat padding-box;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0.85;
+}

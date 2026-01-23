@@ -1,0 +1,19 @@
+.newHeaderSection{
+    background: #000;
+}
+
+.registration-form{
+    /* width: 30%; */
+    /* background: #fff;
+    margin: 30px auto;
+   
+    box-shadow: 0px 2px 3px 0px #888888; */
+    padding: 45px;
+}
+
+.registration-form h1{
+    font-size: 46px;
+    font-weight: 400 !important;
+    text-align: center;
+    color: #c52126;
+}

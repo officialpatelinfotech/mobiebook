@@ -1,0 +1,66 @@
+<app-buy-coupon-popup *ngIf="isbuydirect == true" [couponDetail]="selectedCoupon" [isview]="viewBuy"
+  (buyPopClick)="addToCartDone($event)"></app-buy-coupon-popup>
+<app-buy-coupon-request *ngIf="isrequest == true" [couponDetail]="selectedCoupon" [isview]="viewBuy"
+  (buyPopClick)="addToCartDone($event)"></app-buy-coupon-request>
+<div class="row page-titles">
+  <div class="col-md-5 align-self-center">
+    <h4 class="text-themecolor">Coupons</h4>
+  </div>
+  <div class="col-md-7 align-self-center text-right">
+    <div class="d-flex justify-content-end align-items-center">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
+        <li class="breadcrumb-item active">Coupon</li>
+      </ol>
+      <button type="button" (click)="back()" class="btn waves-effect waves-light btn-rounded btn-danger m-l-15"><i
+          class="ti-arrow-left"></i> Back</button>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+<!-- row -->
+<div class="row">
+  <div class="col-md-3" *ngFor="let c of couponDetail">
+    <div class="ribbon-wrapper card matsetcard">
+      <div class="ribbon ribbon-bookmark  ribbon-default"><span>{{c.CouponTypeName}}</span> </div>
+      <div class="ribbon-content">
+        <img class="img-responsive border-rightset" alt="user" src="../../../assets/img/coupan.png"
+          alt="{{c.CouponTitle}}" style="margin-top: 10px;">
+      </div>
+    </div>
+    <div class="setcontainTags card">
+      <h5 class="card-title">{{c.CouponTitle}}</h5>
+      <div>
+        <a class="link list-icons iconSetRemoveArrow">
+          <i class="icons-DNA"></i> Quantity: {{c.Quantity}}
+        </a>
+        <a class="link list-icons m-l-10 m-r-10 iconSetRemoveArrow">
+          <i class="fa fa-heart-o"></i>Price: {{c.CurrencySymbol}} {{getpricetofix(c.CouponPrice)}}
+        </a>
+      </div>
+      <div class="clearfix"></div>
+      <footer class="card__actions align-items-center align-self-center p-1">
+        <div>
+          <hr>
+        </div>
+        <div class="row">
+          <div class="col-md-7 p-0 pr-2">
+            <input min="1" [(ngModel)]="c.BuyQuantity" type="number" class="form-control botoninputset" />
+          </div>
+          <div class="col-md-5 p-0">
+            <button class="btn btn-success  newbtnCoupan" type="button" (click)="addToCart(c)">Add to cart</button>
+          </div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+
+</div>
+<!-- row -->

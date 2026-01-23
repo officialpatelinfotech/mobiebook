@@ -1,0 +1,41 @@
+<div class="card">
+    <div class="card-body bodylistcard">
+        <h4 class="card-title">{{viewtype}}</h4>
+        <label for="input-file-now">Please choose a file for <span style="text-transform: lowercase;">{{viewtype}}</span></label>
+        <div class="dropify-wrapper">
+            <div class="dropify-message">
+                <span class="file-iconset"><i class="icon-cloud-upload"></i></span>
+                <p>Drag and drop a file here or click</p>
+                <p class="dropify-error">Ooops, something wrong appended.</p>
+            </div>
+            <div class="dropify-loader"></div>
+            <div class="dropify-errors-container">
+                <ul></ul>
+            </div>
+            <div *ngIf="ismutilple === true" class="classmore" (click)="fileInput.click()" pmDragdrop (onFileDropped)="attachedFile($event,viewtype)">
+                <input hidden type="file" #fileInput (change)="attachedFile($event.target.files,viewtype)" multiple>
+            </div>
+            <div *ngIf="ismutilple === false" class="classmore" (click)="fileInput.click()"
+             pmDragdrop (onFileDropped)="attachedFile($event,viewtype)">
+                <input hidden type="file" #fileInput (change)="attachedFile($event.target.files,viewtype)">
+            </div>  
+            <button type="button" class="dropify-clear" *ngIf="uploadImageShow == true" (click)="removeImage()">Remove
+            </button>
+            <div class="dropify-preview" *ngIf="uploadImageShow == true && viewtype != 'PAGE'">
+                <span class="dropify-render">
+                    <img src="{{imageLink}}">
+                </span>
+                <div class="dropify-infos">
+                    <div class="dropify-infos-inner">
+                        <p class="dropify-filename">
+                            <span class="dropify-filename-inner">
+                                {{imageTitle}}
+                            </span>
+                        </p>
+                        <p class="dropify-infos-message">Drag and drop or click to replace</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

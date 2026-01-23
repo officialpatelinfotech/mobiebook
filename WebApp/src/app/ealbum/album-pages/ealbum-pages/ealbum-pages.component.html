@@ -1,0 +1,57 @@
+<app-img-uploader *ngIf="isSwap == false" [pageType]="pageType.Page" [viewtype]="pageType.Page" [ismutilple]="true"
+    (attachedImageEvent)="attachedFile($event,pageType.Page)" (attachTotalImageEvent)="totalImage($event)">
+</app-img-uploader>
+
+<div class="row">
+    <div class="col-sm-12 float-right">
+        <button type="button" *ngIf="isPublished != true && attachedImageDetail.length > 0"
+            class="btn waves-effect waves-light btn-danger " (click)="removeAll()" style="float: right;">Clear All <i
+                class="fa fa-trash"></i></button>
+        <!-- <button type="button" *ngIf="isPublished != true && attachedImageDetail.length > 0"
+            class="btn waves-effect waves-light btn-danger " (click)="swap()" style="float: right;">{{swapText}} <i
+                class="fa fa-random"></i></button> -->
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-12 text-right">
+      <strong>  Total : {{attachedImageDetail.length}}</strong>
+    </div>
+</div>
+<hr>
+<div *ngIf="isDisplay == true" class="row el-element-overlay {{widthClass}}" cdkDropList [cdkDropListData]="attachedImageDetail"
+    (cdkDropListDropped)="drop($event)">
+    <div class="{{containerClass}} setpaddingtheme " *ngFor="let f of attachedImageDetail;let i = index" cdkDrag>
+        <div class="card">
+            <div class="el-card-item">
+                <div class="el-card-avatar el-overlay-1">
+                    <img class="img-responsive border-rightset" src="{{f.ImageLink}}" alt="{{f.FileName}}">
+                    <div class="el-overlay">
+                        <ul class="el-info">
+                            <li>
+                                <a *ngIf="isPublished != true" (click)="remove(f,i)"><i class="fa fa-trash"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="el-card-content">
+                    <h4 class="box-title">{{f.FileName}}</h4>
+                    <div class="progress" style="height:6px">
+                        <div class="progress-bar progress-bar-info" role="progressbar"
+                            attr.aria-valuenow="{{ f.Progress }}" aria-valuemin="0" aria-valuemax="100"
+                            [ngStyle]="{'width':f.Progress+'%' }">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<button class="btn waves-effect waves-light btn-dark privioBtnset" (click)="previous()"><i class="ti-arrow-left"></i>
+    Previous</button>
+<button *ngIf="isPublished != true" class="btn waves-effect waves-light btn-danger SaveAndNext" (click)="savePages()">
+    <i class="ti-save-alt"></i> Save & Next
+</button>
+<button type="button" *ngIf="isPublished == true" class="btn waves-effect waves-light btn-danger " (click)="next()"
+    style="float: right;">Next <i class="ti-arrow-right"></i></button>
+<app-swap-image></app-swap-image>

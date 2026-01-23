@@ -1,0 +1,14 @@
+.checked {
+    color: orange;
+  }
+  .unchecked{
+      color: #b1adad;
+  }
+  .table-striped tbody tr:nth-of-type(odd) {
+    background-color: #fcfcfc !important;
+}
+
+
+.table td, .table th {
+    vertical-align: middle;
+}

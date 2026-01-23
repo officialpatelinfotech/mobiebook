@@ -1,0 +1,69 @@
+.imagssec img{
+    width: 145px;
+    padding: 10px 0
+}
+.dropdown{
+    text-align: right;
+}
+.dropdown .dropdown-toggle{
+    background: none;
+    border: none;
+    color: #000;
+    font-weight: 600;
+    position: relative;
+    top: 6px;
+}
+.dropdown .dropdown-menu{
+  
+    float: right !important;
+    left: auto !important;
+    top: 45px;
+    border-radius: 0px;
+    border: none;
+    box-shadow: 0px 2px 3px 0px #888888;
+    padding: 0;
+    font-size: 13px;
+}
+.showDropDown{
+    display: block !important;
+    left: -116px !important;
+}
+
+
+.ulactionset{
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.ulactionset a{
+    width: 100%;
+    display: block;
+    padding: 7px;
+}
+.ulactionset a:hover{
+    background: #bc343469;
+    color: #fff !important;
+}
+.iconwidthText{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.icontexs{
+    width: 15%;
+}
+.icontexs-text{
+    width: 85%;
+}
+.icontexs-text h1{
+    font-size: 13px;
+    font-weight: 600 !important;
+    margin: 0px !important;
+}
+.icontexs-text p{
+    font-size: 12px;
+    margin: 0;
+}
+.icontexs i{
+    color: #7f0909;
+}

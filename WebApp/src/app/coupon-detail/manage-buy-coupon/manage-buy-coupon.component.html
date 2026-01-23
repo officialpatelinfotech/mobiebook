@@ -1,0 +1,175 @@
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">Manage Coupons</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
+                <li class="breadcrumb-item active">Coupon</li>
+            </ol>
+            <button type="button" (click)="buyCoupon()" class="btn waves-effect waves-light btn-danger  m-l-15"
+                ><i class="icon-plus" style="position: relative; top: 2px;"></i> Buy
+                Coupon</button>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="row p-t-10 p-b-10">
+                    <!-- Column -->
+                    <div class="col p-r-0">
+                        <h1 class="font-light">{{customerCoupon?.TotalCoupon}}</h1>
+                        <h6 class="text-muted">Total Coupon</h6>
+                    </div>
+                    <!-- Column -->
+                    <div class="col text-right align-self-center">
+                        <div data-label="20%" class="css-bar m-b-0 css-bar-primary css-bar-20"><i class="icons-Tag"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="row p-t-10 p-b-10">
+                    <!-- Column -->
+                    <div class="col p-r-0">
+                        <h1 class="font-light">{{customerCoupon?.TotalIntrasit}}</h1>
+                        <h6 class="text-muted">Total Inlein</h6>
+                    </div>
+                    <!-- Column -->
+                    <div class="col text-right align-self-center">
+                        <div data-label="30%" class="css-bar m-b-0 css-bar-danger css-bar-20"><i
+                                class="mdi mdi-briefcase-check"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="row p-t-10 p-b-10">
+                    <!-- Column -->
+                    <div class="col p-r-0">
+                        <h1 class="font-light">{{customerCoupon?.TotalUsed}}</h1>
+                        <h6 class="text-muted">Total Used </h6>
+                    </div>
+                    <!-- Column -->
+                    <div class="col text-right align-self-center">
+                        <div data-label="40%" class="css-bar m-b-0 css-bar-warning css-bar-40"><i
+                                class="mdi mdi-star-circle"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <div class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer p-0">
+                        <div class="row" style="margin-right: 0px;margin-left: 0px;">
+                            <form [formGroup]="filterForm" style="width: 100%;display:flex;">
+                                <div class="col-sm-12 col-md-6">
+                                    <div class="dataTables_length" style="margin-right: 15px;">
+                                        <label style="padding-left:5px;">Type
+                                            <select formControlName="type" class="form-control form-control-line">
+                                                <option *ngFor="let type of couponTypes" [value]="type.Id">{{type.Text}}
+                                                </option>
+                                            </select>
+
+                                        </label>
+                                    </div>
+                                    <div class="dataTables_length">
+                                        <label style="padding-left:5px;">status
+                                            <select formControlName="status" class="form-control form-control-line">
+                                                <option *ngFor="let type of status" [value]="type.Id">{{type.Text}}
+                                                </option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-sm-12 col-md-6">
+                                    <div class="dataTables_filter">
+                                        <label>Search:
+                                            <input type="search" class="form-control form-control-sm" placeholder="">
+                                        </label>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <table class="table table-hover nowrap table-striped">
+                            <thead>
+                                <tr role="row">
+                                    <th>Title</th>
+                                    <th class="text-center">Transaction id
+                                    </th>
+                                    <th class="text-center">Price
+                                    </th>
+                                    <th class="text-center">Quantity
+                                    </th>
+                                    <th class="text-center">Total Amount
+                                    </th>
+                                    <th class="text-center">Transaction Date
+                                    </th>
+                                    
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let cou of requestCoupon">
+                                    <td> <a href="javascript:void(0)">{{cou.CouponTitle}}</a>
+                                        <span> ({{cou.CouponType}}) ({{cou.CouponQuantity}})</span>
+                                    </td>
+                                    <td class="text-center"> {{cou.RequestId}}</td>
+                                    <td class="text-center">{{cou.CurrencySymbol}} {{getpricetofix(cou.CouponPrice)}}</td>
+                                    <td class="text-center">{{cou.RequestQuantity}}</td>
+                                    <td class="text-center">{{cou.CurrencySymbol}} {{cou.TotalPrice.toFixed(2)}}</td>
+                                    <td class="text-center">{{cou.CreatedOn | date: dateFormat}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="row" style="margin-right: 0px;  margin-left: 0px;">
+                            <div class="col-sm-12 col-md-5">
+                                <div class="dataTables_info">
+                                    Showing 1 to 10 of 57
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-7">
+                                <div class="dataTables_paginate paging_simple_numbers">
+                                    <ul class="pagination">
+                                        <li class="paginate_button page-item previous disabled">
+                                            <a class="page-link"> Previous</a>
+                                        </li>
+                                        <li class="paginate_button page-item active"><a class="page-link">1</a></li>
+                                        <li class="paginate_button page-item "><a class="page-link">2</a></li>
+                                        <li class="paginate_button page-item "><a class="page-link">3</a></li>
+                                        <li class="paginate_button page-item "><a class="page-link">4</a></li>
+                                        <li class="paginate_button page-item "><a class="page-link">5</a></li>
+                                        <li class="paginate_button page-item "><a class="page-link">6</a></li>
+                                        <li class="paginate_button page-item next"><a class="page-link">Next</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

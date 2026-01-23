@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <UserSecretsId>5427f1bd-eeea-4d02-93df-309cedde9680</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.2.0" />
+    <PackageReference Include="MySql.Data" Version="8.0.23" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Photomate.Domain\Photomate.Domain.csproj" />
+    <ProjectReference Include="..\Photomate.Model\Photomate.Model.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Mp3Files\" />
+    <Folder Include="Resources\2\403\" />
+    <Folder Include="Resources\2\404\icons\" />
+    <Folder Include="Resources\2\405\icons\" />
+    <Folder Include="Resources\2\406\" />
+    <Folder Include="Resources\2\407\icons\6587e318-a0cc-431e-bc8a-fda6fdf5be94.png\" />
+    <Folder Include="Resources\FixedImages\" />
+  </ItemGroup>
+
+
+</Project>

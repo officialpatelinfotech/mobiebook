@@ -1,0 +1,726 @@
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">Create Template</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a>Home</a></li>
+                <li class="breadcrumb-item active">Create Template</li>
+            </ol>
+            <button type="button" class="btn waves-effect waves-light btn-rounded btn-danger m-l-15"><i
+                    class="ti-arrow-left"></i> Back</button>
+        </div>
+    </div>
+</div>
+<div class="card" style="padding: 30px 20px; margin-top: 15px;">
+    <div class="stepperUI">
+        <div class="row">
+            <div class="col-md-12">
+                <div id="stepper1" class="bs-stepper">
+                    <div class="bs-stepper-header" style="padding: 10px 25px;">
+                        <div class="step" data-target="#test-l-1">
+                            <button type="button" class="btn step-trigger ">
+                                <span class="bs-stepper-circle">1</span>
+                                <span class="bs-stepper-label">Template View</span>
+                            </button>
+                        </div>
+                        <div class="line"></div>
+                        <div class="step" data-target="#test-l-2">
+                            <button type="button" class="btn step-trigger ">
+                                <span class="bs-stepper-circle">2</span>
+                                <span class="bs-stepper-label"> First page </span>
+                            </button>
+                        </div>
+
+                        <div class="line"></div>
+                        <div class="step" data-target="#test-l-3">
+                            <button type="button" class="btn step-trigger ">
+                                <span class="bs-stepper-circle">3</span>
+                                <span class="bs-stepper-label"> second page </span>
+                            </button>
+                        </div>
+
+                        <div class="line"></div>
+                        <div class="step" data-target="#test-l-4">
+                            <button type="button" class="btn step-trigger ">
+                                <span class="bs-stepper-circle">4</span>
+                                <span class="bs-stepper-label"> Third page </span>
+                            </button>
+                        </div>
+
+                        <div class="line"></div>
+                        <div class="step" data-target="#test-l-5">
+                            <button type="button" class="btn step-trigger ">
+                                <span class="bs-stepper-circle">5</span>
+                                <span class="bs-stepper-label"> Last page </span>
+                            </button>
+                        </div>
+
+                    </div>
+                    <div class="bs-stepper-content">
+                        <div id="test-l-1" class="content">
+                            <form class="tab-wizard containOfstteper" [formGroup]="selectTemplate" style="margin-bottom: 25px;" >
+                                <div class="form-body">
+                                    <div class="row p-t-20">
+                                        <div class="col-md-12">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">View animation :</label>
+                                                        <select formcontrolname="type" class="form-control">
+                                                            <option  *ngFor="let opti of templateView" value="{{opti.id}}"> {{opti.name}}</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Select animation :</label>
+                                                        <select formcontrolname="type2" class="form-control">
+                                                            <option value="Spread"> Style 1</option>
+                                                            <option value="Page"> Style 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div>
+                                                        <a (click)="tempateOneOpen()">Template 1</a>
+                                                    </div>
+                                                    <div>
+                                                        <a (click)="tempateOneTwo()">Template 2</a>
+                                                    </div>
+                                                </div>
+                                            
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            <button (click)="next()" class="btn waves-effect waves-light btn-danger"
+                                style="float: right; margin-top: 15px;"><i class="ti-save-alt"></i> Save & next <i
+                                    class="ti-arrow-right"></i></button>
+                        </div>
+                        <div id="test-l-2" class="content">
+                            <form class="tab-wizard containOfstteper" style="margin-bottom: 25px;">
+                                <div class="form-body">
+                                    <div class="row p-t-20">
+                                        <div class="col-md-9">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Leb content :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control" 
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Title :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control ">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control" 
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card-body bodylistcard">
+                                                <div class="dropify-wrapper">
+                                                    <div class="dropify-message">
+                                                        <span class="file-iconset"><i
+                                                                class="icon-cloud-upload"></i></span>
+                                                        <p>Drag and drop a file here or click</p>
+                                                        <p class="dropify-error">Ooops, something wrong appended.</p>
+                                                    </div>
+                                                    <div class="dropify-loader"></div>
+                                                    <div class="dropify-errors-container">
+                                                        <ul></ul>
+                                                    </div>
+                                                    <div *ngIf="ismutilple === true" class="classmore"
+                                                        (click)="fileInput.click()" pmDragdrop
+                                                        (onFileDropped)="attachedFile($event,viewtype)">
+                                                        <input hidden type="file" #fileInput
+                                                            (change)="attachedFile($event.target.files,viewtype)"
+                                                            multiple>
+                                                    </div>
+                                                    <div *ngIf="ismutilple === false" class="classmore"
+                                                        (click)="fileInput.click()" pmDragdrop
+                                                        (onFileDropped)="attachedFile($event,viewtype)">
+                                                        <input hidden type="file" #fileInput
+                                                            (change)="attachedFile($event.target.files,viewtype)">
+                                                    </div>
+                                                    <button type="button" class="dropify-clear"
+                                                        *ngIf="uploadImageShow == true" (click)="removeImage()">Remove
+                                                    </button>
+                                                    <div class="dropify-preview"
+                                                        *ngIf="uploadImageShow == true && viewtype != 'PAGE'">
+                                                        <span class="dropify-render">
+                                                            <img src="{{imageLink}}">
+                                                        </span>
+                                                        <div class="dropify-infos">
+                                                            <div class="dropify-infos-inner">
+                                                                <p class="dropify-filename">
+                                                                    <span class="dropify-filename-inner">
+                                                                        {{imageTitle}}
+                                                                    </span>
+                                                                </p>
+                                                                <p class="dropify-infos-message">Drag and drop or click
+                                                                    to replace</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            <button class="btn waves-effect waves-light btn-dark privioBtnset" (click)="preview()"
+                                style="float: left;"><i class="ti-arrow-left"></i> Previous</button>
+                            <button (click)="next()" class="btn waves-effect waves-light btn-danger"
+                                style="float: right; "><i class="ti-save-alt"></i> Save & next <i
+                                    class="ti-arrow-right"></i></button>
+                        </div>
+                        <div id="test-l-3" class="content">
+                            <form class="tab-wizard containOfstteper" style="margin-bottom: 25px;">
+                                <div class="form-body">
+                                    <div class="row p-t-20">
+                                        <div class="col-md-9">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Title :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control" 
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Contain 1 :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control ">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control"
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Contain 2 :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control ">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control" 
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card-body bodylistcard">
+                                                <div class="dropify-wrapper" style="height: 225px !important;">
+                                                    <div class="dropify-message">
+                                                        <span class="file-iconset"><i
+                                                                class="icon-cloud-upload"></i></span>
+                                                        <p>Drag and drop a file here or click</p>
+                                                        <p class="dropify-error">Ooops, something wrong appended.</p>
+                                                    </div>
+                                                    <div class="dropify-loader"></div>
+                                                    <div class="dropify-errors-container">
+                                                        <ul></ul>
+                                                    </div>
+                                                    <div *ngIf="ismutilple === true" class="classmore"
+                                                        (click)="fileInput.click()" pmDragdrop
+                                                        (onFileDropped)="attachedFile($event,viewtype)">
+                                                        <input hidden type="file" #fileInput
+                                                            (change)="attachedFile($event.target.files,viewtype)"
+                                                            multiple>
+                                                    </div>
+                                                    <div *ngIf="ismutilple === false" class="classmore"
+                                                        (click)="fileInput.click()" pmDragdrop
+                                                        (onFileDropped)="attachedFile($event,viewtype)">
+                                                        <input hidden type="file" #fileInput
+                                                            (change)="attachedFile($event.target.files,viewtype)">
+                                                    </div>
+                                                    <button type="button" class="dropify-clear"
+                                                        *ngIf="uploadImageShow == true" (click)="removeImage()">Remove
+                                                    </button>
+                                                    <div class="dropify-preview"
+                                                        *ngIf="uploadImageShow == true && viewtype != 'PAGE'">
+                                                        <span class="dropify-render">
+                                                            <img src="{{imageLink}}">
+                                                        </span>
+                                                        <div class="dropify-infos">
+                                                            <div class="dropify-infos-inner">
+                                                                <p class="dropify-filename">
+                                                                    <span class="dropify-filename-inner">
+                                                                        {{imageTitle}}
+                                                                    </span>
+                                                                </p>
+                                                                <p class="dropify-infos-message">Drag and drop or click
+                                                                    to replace</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            <button class="btn waves-effect waves-light btn-dark privioBtnset" (click)="preview()"
+                                style="float: left;"><i class="ti-arrow-left"></i> Previous</button>
+                            <button (click)="next()" class="btn waves-effect waves-light btn-danger"
+                                style="float: right; "><i class="ti-save-alt"></i> Save & next <i
+                                    class="ti-arrow-right"></i></button>
+                        </div>
+                        <div id="test-l-4" class="content">
+                            <form class="tab-wizard containOfstteper" style="margin-bottom: 25px;">
+                                <div class="form-body">
+                                    <div class="row p-t-20">
+                                        <div class="col-md-9">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Title :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control"
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Contain 1 :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control ">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control" 
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Contain 2 :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control ">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control" 
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card-body bodylistcard">
+                                                <div class="dropify-wrapper" style="height: 225px !important;">
+                                                    <div class="dropify-message">
+                                                        <span class="file-iconset"><i
+                                                                class="icon-cloud-upload"></i></span>
+                                                        <p>Drag and drop a file here or click</p>
+                                                        <p class="dropify-error">Ooops, something wrong appended.</p>
+                                                    </div>
+                                                    <div class="dropify-loader"></div>
+                                                    <div class="dropify-errors-container">
+                                                        <ul></ul>
+                                                    </div>
+                                                    <div *ngIf="ismutilple === true" class="classmore"
+                                                        (click)="fileInput.click()" pmDragdrop
+                                                        (onFileDropped)="attachedFile($event,viewtype)">
+                                                        <input hidden type="file" #fileInput
+                                                            (change)="attachedFile($event.target.files,viewtype)"
+                                                            multiple>
+                                                    </div>
+                                                    <div *ngIf="ismutilple === false" class="classmore"
+                                                        (click)="fileInput.click()" pmDragdrop
+                                                        (onFileDropped)="attachedFile($event,viewtype)">
+                                                        <input hidden type="file" #fileInput
+                                                            (change)="attachedFile($event.target.files,viewtype)">
+                                                    </div>
+                                                    <button type="button" class="dropify-clear"
+                                                        *ngIf="uploadImageShow == true" (click)="removeImage()">Remove
+                                                    </button>
+                                                    <div class="dropify-preview"
+                                                        *ngIf="uploadImageShow == true && viewtype != 'PAGE'">
+                                                        <span class="dropify-render">
+                                                            <img src="{{imageLink}}">
+                                                        </span>
+                                                        <div class="dropify-infos">
+                                                            <div class="dropify-infos-inner">
+                                                                <p class="dropify-filename">
+                                                                    <span class="dropify-filename-inner">
+                                                                        {{imageTitle}}
+                                                                    </span>
+                                                                </p>
+                                                                <p class="dropify-infos-message">Drag and drop or click
+                                                                    to replace</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            <button class="btn waves-effect waves-light btn-dark privioBtnset" style="float: left;"><i
+                                    class="ti-arrow-left" (click)="preview()"></i> Previous</button>
+                            <button (click)="next()" class="btn waves-effect waves-light btn-danger"
+                                style="float: right; "><i class="ti-save-alt"></i> Save & next <i
+                                    class="ti-arrow-right"></i></button>
+                        </div>
+                        <div id="test-l-5" class="content">
+                            <form class="tab-wizard containOfstteper" style="margin-bottom: 25px;">
+                                <div class="form-body">
+                                    <div class="row p-t-20">
+                                        <div class="col-md-9">
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Contain :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control" 
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Title :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control ">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control" 
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Name :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control ">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control"
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Contact no :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Font details :</label>
+                                                        <select formcontrolname="type" class="form-control ">
+                                                            <option value="Spread"> font 1 </option>
+                                                            <option value="Page"> font 2 </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Color picker :</label>
+                                                        <input class="form-control"
+                                                            [style.background]="color" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Web url :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Facebook link :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-4">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Instagram url :</label>
+                                                        <input type="text" class="form-control">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="card-body bodylistcard">
+                                                <h4 class="card-title">logo</h4>
+                                                <div class="dropify-wrapper">
+                                                    <div class="dropify-message">
+                                                        <span class="file-iconset"><i
+                                                                class="icon-cloud-upload"></i></span>
+                                                        <p>Drag and drop a file here or click</p>
+                                                        <p class="dropify-error">Ooops, something wrong appended.</p>
+                                                    </div>
+                                                    <div class="dropify-loader"></div>
+                                                    <div class="dropify-errors-container">
+                                                        <ul></ul>
+                                                    </div>
+                                                    <div *ngIf="ismutilple === true" class="classmore"
+                                                        (click)="fileInput.click()" pmDragdrop
+                                                        (onFileDropped)="attachedFile($event,viewtype)">
+                                                        <input hidden type="file" #fileInput
+                                                            (change)="attachedFile($event.target.files,viewtype)"
+                                                            multiple>
+                                                    </div>
+                                                    <div *ngIf="ismutilple === false" class="classmore"
+                                                        (click)="fileInput.click()" pmDragdrop
+                                                        (onFileDropped)="attachedFile($event,viewtype)">
+                                                        <input hidden type="file" #fileInput
+                                                            (change)="attachedFile($event.target.files,viewtype)">
+                                                    </div>
+                                                    <button type="button" class="dropify-clear"
+                                                        *ngIf="uploadImageShow == true" (click)="removeImage()">Remove
+                                                    </button>
+                                                    <div class="dropify-preview"
+                                                        *ngIf="uploadImageShow == true && viewtype != 'PAGE'">
+                                                        <span class="dropify-render">
+                                                            <img src="{{imageLink}}">
+                                                        </span>
+                                                        <div class="dropify-infos">
+                                                            <div class="dropify-infos-inner">
+                                                                <p class="dropify-filename">
+                                                                    <span class="dropify-filename-inner">
+                                                                        {{imageTitle}}
+                                                                    </span>
+                                                                </p>
+                                                                <p class="dropify-infos-message">Drag and drop or click
+                                                                    to replace</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="card-body bodylistcard">
+                                                <h4 class="card-title">Profile pic</h4>
+                                                <div class="dropify-wrapper">
+                                                    <div class="dropify-message">
+                                                        <span class="file-iconset"><i
+                                                                class="icon-cloud-upload"></i></span>
+                                                        <p>Drag and drop a file here or click</p>
+                                                        <p class="dropify-error">Ooops, something wrong appended.</p>
+                                                    </div>
+                                                    <div class="dropify-loader"></div>
+                                                    <div class="dropify-errors-container">
+                                                        <ul></ul>
+                                                    </div>
+                                                    <div *ngIf="ismutilple === true" class="classmore"
+                                                        (click)="fileInput.click()" pmDragdrop
+                                                        (onFileDropped)="attachedFile($event,viewtype)">
+                                                        <input hidden type="file" #fileInput
+                                                            (change)="attachedFile($event.target.files,viewtype)"
+                                                            multiple>
+                                                    </div>
+                                                    <div *ngIf="ismutilple === false" class="classmore"
+                                                        (click)="fileInput.click()" pmDragdrop
+                                                        (onFileDropped)="attachedFile($event,viewtype)">
+                                                        <input hidden type="file" #fileInput
+                                                            (change)="attachedFile($event.target.files,viewtype)">
+                                                    </div>
+                                                    <button type="button" class="dropify-clear"
+                                                        *ngIf="uploadImageShow == true" (click)="removeImage()">Remove
+                                                    </button>
+                                                    <div class="dropify-preview"
+                                                        *ngIf="uploadImageShow == true && viewtype != 'PAGE'">
+                                                        <span class="dropify-render">
+                                                            <img src="{{imageLink}}">
+                                                        </span>
+                                                        <div class="dropify-infos">
+                                                            <div class="dropify-infos-inner">
+                                                                <p class="dropify-filename">
+                                                                    <span class="dropify-filename-inner">
+                                                                        {{imageTitle}}
+                                                                    </span>
+                                                                </p>
+                                                                <p class="dropify-infos-message">Drag and drop or click
+                                                                    to replace</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                            <button class="btn waves-effect waves-light btn-dark privioBtnset" style="float: left;"><i
+                                    class="ti-arrow-left" (click)="preview()"></i> Previous</button>
+                            <button (click)="next()" class="btn waves-effect waves-light btn-danger"
+                                style="float: right; "><i class="ti-save-alt"></i> Save </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+

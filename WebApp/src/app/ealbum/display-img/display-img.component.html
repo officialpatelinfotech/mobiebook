@@ -1,0 +1,103 @@
+<div class="row el-element-overlay" *ngIf="viewtype != 'PAGE'">
+
+    <div class="col-md-2 " *ngFor="let f of RowDisplay;let i = index">
+        <div class="card">
+            <div class="el-card-item">
+                <div class="el-card-avatar el-overlay-1">
+                    <img class="img-responsive border-rightset" src="{{f.ImageLink}}" alt="{{f.ImageTitle}}">
+                    <div class="el-overlay">
+                        <ul class="el-info">
+                            <li>
+                                <a *ngIf="album?.Status != 'PUBLISHED'" (click)="remove(f,i)"><i
+                                        class="fa fa-trash"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="el-card-content">
+                    <h4 class="box-title">{{removeExtension(f.ImageTitle)}}</h4>
+                    <div class="progress" style="height:6px">
+                        <div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar"
+                            attr.aria-valuenow="{{ f.Progress }}" aria-valuemin="0" aria-valuemax="100"
+                            [ngStyle]="{'width':f.Progress+'%' }">
+                            {{ f.Progress }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row el-element-overlay" *ngIf="viewtype == 'PAGE'" cdkDropList [cdkDropListData]="RowDisplay"
+    (cdkDropListDropped)="drop($event)">
+    <div class="col-md-2 setpaddingtheme" *ngFor="let f of RowDisplay;let i = index" cdkDrag>
+        <!-- *ngIf="(f.IsAlbumView != true && album.PageType == 'Spread') || (album.PageType !== 'Spread')" -->
+        <div class="card">
+            
+            <div class="el-card-item">
+                <div class="el-card-avatar el-overlay-1">
+                    <img class="img-responsive border-rightset" src="{{f.ImageLink}}" alt="{{f.ImageTitle}}">
+                    <div class="el-overlay">
+                        <ul class="el-info">
+                            <li>
+                                <a *ngIf="album?.Status != 'PUBLISHED'" (click)="remove(f,i)"><i
+                                        class="fa fa-trash"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="el-card-content">
+                    <h4 class="box-title">{{removeExtension(f.ImageTitle)}}</h4>
+                    <div class="progress" style="height:6px">
+                        <div class="progress-bar progress-bar-info" role="progressbar"
+                            attr.aria-valuenow="{{ f.Progress }}" aria-valuemin="0" aria-valuemax="100"
+                            [ngStyle]="{'width':f.Progress+'%' }">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- <div class="row" *ngIf="type == 'PAGE'" cdkDropList [cdkDropListData]="RowDisplay" (cdkDropListDropped)="drop($event)">
+
+    <div class="col-md-3" *ngFor="let f of RowDisplay;let i = index" cdkDrag>
+        <div class="card shadow-lg bg-white rounded m-2">
+            <div class="d-flex flex-row">
+                <div class="p-0 bg-success col-md-2">
+                    <span class="text-white">
+                        <img style="height: 100%;width: 100%;" class="img-responsive border-rightset" alt="user"
+                            src="{{f.ImageLink}}" alt="{{f.ImageTitle}}">
+                    </span>
+                </div>
+                <div class="align-self-center col-md-10 mt-1 mb-1">
+                    <div class="row">
+                        <span class="col-md-7 m-b-0 text-success"><strong>{{f.ImageTitle}}</strong></span>
+                        <span class="col-md-5 text-muted m-b-0 text-right">{{f.ImageSize}}</span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8 mt-1">
+                            <div class="progress" style="height:6px">
+                                <div class="progress-bar progress-bar-info" role="progressbar"
+                                    attr.aria-valuenow="{{ f.Progress }}" aria-valuemin="0" aria-valuemax="100"
+                                    [ngStyle]="{'width':f.Progress+'%' }">
+                                </div>
+                            </div>
+
+                        </div>
+                        <div class="col-md-4  text-right">
+                            <a *ngIf="album?.Status != 'PUBLISHED'" (click)="remove(f,i)"><i class="fa fa-trash"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div> -->

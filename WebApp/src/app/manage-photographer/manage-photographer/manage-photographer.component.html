@@ -1,0 +1,117 @@
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">Manage Photographer</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
+                <li class="breadcrumb-item active">Photographer</li>
+            </ol>
+           
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-3">
+        <div class="card bg-primary">
+            <div class="card-body">
+                <h5 class="text-light font-medium m-t-10">Total Photographer <i class="fa fa-angle-up font-bold"></i></h5>
+                <h3 class="m-t-0 text-light font-medium">{{userList.length}}</h3>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <div class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer p-0">
+                        <div class="row" style="margin-right: 0px;margin-left: 0px;">
+                            <div class="col-sm-12 col-md-6">
+                                <div class="dataTables_length">
+                                    
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-6">
+                                <div class="dataTables_filter">
+                                    <label>Search:
+                                        <input type="search" (ngModelChange)="searchChange($event)" [(ngModel)]="pagination.FilterString" class="form-control form-control-sm" placeholder="">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <table class="table table-hover nowrap table-striped">
+                            <thead>
+                                <tr role="row">
+                                    <th>Full Name
+                                    </th>
+                                    <th>Email
+                                    </th>
+                                    <th class="text-center">Business Name
+                                    </th>
+                                    <!-- <th class="text-center">Window App
+                                    </th> -->
+                                    <th class="text-center">Created On
+                                    </th>
+                                    <th class="text-center">Action </th>                                   
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let user of userList | paginate: { itemsPerPage: pagination.PageSize, currentPage: pagination.PageIndex,totalItems:totalRecord }">
+                                    <td>
+                                        <div class="d-flex no-block">
+                                            <div class="text-ellipsis">
+                                                <span>{{user.FullName}}</span>
+                                                &nbsp; <span class="label label-success" *ngIf="user.IsActive == true"> Active</span>
+                                                <span class="label label-danger" *ngIf="user.IsActive != true"> Inactive</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-success">{{user.Email}}</div>
+                                    </td>
+                                    <td>
+                                        {{user.BusinessName}}
+                                    </td>
+                                    <!-- <td>
+                                        {{user.IsWindowApp == true? 'Active': 'Inactive'}}
+                                    </td> -->
+                                    <td class="text-center">
+                                        {{user.CreatedOn | date: dateFormat}}
+                                    </td>
+                                   
+                                    <td class="text-center">
+                                        <!-- <a (click)="confirmWindow(user)" *ngIf="user.IsActive == true" [ngStyle]="{'color': user.IsWindowApp == true? 'green':''}" title="{{user.IsWindowApp == true? 'Click To Deactivate Window App': 'Click To Activate  Window App'}}">
+                                            <i class="fa fa-laptop" style="font-size:12px;"></i> </a> -->
+                                        <a (click)="confirmBlock(user)" [ngStyle]="{'color': user.IsActive == true? 'green':''}" class="pl-2"  title="{{user.IsActive == true? 'Click To Deactivate User': 'Click To Activate User'}}">
+                                            <i class="fa fa-ban"></i> </a>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                        <div class="row" style="margin-right: 0px;  margin-left: 0px;">
+                            <div class="col-sm-12 col-md-5">
+                                <div class="dataTables_info">
+                                   
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-7">
+                                <div class="dataTables_paginate paging_simple_numbers">
+                                    <pagination-controls (pageChange)="onChangePage($event)"
+                                  
+                                    ></pagination-controls>
+                                    <!-- <app-pagination [initialPage]="pagination.PageIndex" [items]="totalRecord" (changePage)="onChangePage($event)"></app-pagination> -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

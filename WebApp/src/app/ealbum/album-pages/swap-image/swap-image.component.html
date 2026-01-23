@@ -1,0 +1,42 @@
+<div *ngIf="imageDetail.length > 0" class="modal" tabindex="-1" role="dialog" style="display:block!important">  
+    <div class="modal-dialog custom-alert" role="document">  
+        <div class="modal-content">  
+  
+            <div class="modal-body">  
+                <div class="row content-div " cdkDropList [cdkDropListData]="imageDetail"
+                (cdkDropListDropped)="drop($event)">  
+                    <div class="col-md-12 setpaddingtheme " *ngFor="let f of imageDetail;let i = index" cdkDrag>
+                        <div class="card">
+                            <div class="el-card-item">
+                                <div class="el-card-avatar el-overlay-1">
+                                    <img class="img-responsive border-rightset" src="{{f.ImageLink}}" alt="{{f.FileName}}">                                   
+                                </div>
+                                <div class="el-card-content">
+                                    <h4 class="box-title">{{f.FileName}}</h4>
+                                    <div class="progress" style="height:6px">
+                                        <div class="progress-bar progress-bar-info" role="progressbar"
+                                            attr.aria-valuenow="{{ f.Progress }}" aria-valuemin="0" aria-valuemax="100"
+                                            [ngStyle]="{'width':f.Progress+'%' }">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>  
+                <div class="row">  
+                    <div class="col-md-12">  
+                        <p class="confirm-button">  
+                            <a class="mr-2" (click)="message.yesFn()">  
+                                <button class="btn btn-success">Ok</button>  
+                            </a>  
+                            <a (click)="message.noFn()">  
+                                <button class="btn btn-danger">Cancel</button>  
+                            </a>  
+                        </p>  
+                    </div>  
+                </div>  
+            </div>  
+        </div>  
+    </div>  
+</div>  

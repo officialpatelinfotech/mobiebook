@@ -1,0 +1,34 @@
+<section id="wrapper" class="login-register login-sidebar"
+    style="background-image:url(../../../../assets/img/login-register.jpg);">
+    <div class="login-box card">
+        <div class="card-body">
+            <form [formGroup]="loginForm" class="form-horizontal form-material text-center" id="loginform">
+                <!-- <a href="#" class="db">
+                    <<img src="../assets/images/logo-icon.png" alt="Home" /><br /><img
+                        src="../assets/images/logo-text.png" alt="Home" />
+                </a> -->
+                <h2>Administrator Login</h2>
+                <div class="form-group m-t-40">
+                    <div class="col-xs-12">
+                        <input formControlName="user" class="form-control" type="text" required="" placeholder="Username">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-xs-12">
+                        <input formControlName="password" class="form-control" type="password" required="" placeholder="Password">
+                    </div>
+                </div>
+                
+                <div class="form-group text-center m-t-20">
+                    <div class="col-xs-12">
+                        <button class="btn btn-info btn-lg btn-block text-uppercase btn-rounded" type="button" (click)="loginUser()" >Log
+                            In</button>
+                    </div>
+                </div>
+               
+            </form>
+        </div>
+    </div>
+</section>
+
+

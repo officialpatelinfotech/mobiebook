@@ -1,0 +1,21 @@
+<div class="layout">
+  <div class="col-sm-12 col-md-6">
+    <div class="form-group">
+        <label class="control-label">Select Folder :</label>
+        <input type="text" class="form-control" />
+        <button (click)="browse()">Browse</button> 
+    </div>
+</div>
+    <div class="navigator">
+      <ul>
+        <li *ngFor="let dir of directory">
+          <a (click)="navigateDirectory(dir)">{{dir}}</a>
+        </li>
+      </ul>
+    </div>
+    <div class="thumbnails">
+      <div *ngFor="let img of images" class="image">
+        <img [src]="img">
+      </div>
+    </div>
+  </div>

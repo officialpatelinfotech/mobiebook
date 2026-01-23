@@ -1,0 +1,518 @@
+<div class="newHeaderSection">
+    <app-tool-bar></app-tool-bar>
+</div>
+<div class="container">
+    <div class="col-sm-12 col-md-4 col-xs-4 offset-md-4">
+        <div class="registration-form">
+            <div class="formSectionAll text-center">
+                <div class="alert alert-success alertmassageAll" *ngIf="showMessage == true">{{msgText}}</div>
+                <form action="#" method="post" [formGroup]="registerForm" role="form" class="php-email-form">
+                    <h1>Let’s Get Started</h1>
+                    <div class="signUpSectionAll">
+                        <div class="row">
+                            <div class="col-sm-5 col-md-5 pr-0">
+                                <div class="form-group mred-group01">
+                                    <select  formControlName="type" class="form-control form-control-line">
+                                        <option *ngFor="let type of masterDetail" [value]="type.Id">
+                                            {{type.Text}}
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-sm-7 col-md-7">
+                                <div class="form-group mred-group01">
+                                    <input formControlName="name" type="text" maxlength="45" class="form-control inputloginsets"
+                                        placeholder="Studio/Company Name"  required>
+        
+                                    <div class="invalid-feedback text-left" *ngIf="f.name?.touched && f.name?.invalid"
+                                        style="display: block;">
+                                        <span *ngIf="f.name?.errors.required">Full Name is required
+                                            *</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-12">
+                                <div class="form-group mred-group01">
+                                    <input type="text" formControlName="email" maxlength="100"
+                                        class="form-control inputloginsets" placeholder="Email "  required>
+        
+                                    <div class="invalid-feedback text-left" *ngIf="f.email.touched && f.email.invalid"
+                                        style="display: block;">
+                                        <span *ngIf="f.email?.errors.required">Email id is required
+                                            *</span>
+                                        <span *ngIf="f.email?.errors.email">Email id is not valid.
+                                            *</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 col-md-12">
+                                <div class="form-group mred-group01">
+                                    <div class="row" style="margin-right: -10px;
+                                margin-left: -10px;">
+                                        <div class="col-sm-4 pr-0" style="padding-left: 25px;">
+                                            <select
+                                                class="form-control mred-lable-inp setSignUPData MobibookSignUpSelect sdsfdledf"
+                                                id="sel1">
+                                                <option>+91</option>
+                                                <option>+01</option>
+                                                <option>+02</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-sm-8 ">
+                                            <input type="number" formControlName="mobileno" class="form-control inputloginsets"
+                                                onKeyPress="if(this.value.length==10) return false;"
+                                                placeholder="Cell No (WhatsApp)" >
+                                            <div class="invalid-feedback text-left"
+                                                *ngIf="f.mobileno.touched && f.mobileno.invalid" style="display: block;">
+                                                <span *ngIf="f.mobileno?.errors.required">Mobile Number is required
+                                                    *</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="validate"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 col-md-12">
+                                <div class="form-group mred-group01">
+                                    <input type="{{passwordType}}" formControlName="password" class="form-control inputloginsets"
+                                        maxlength="100" placeholder="Set your Password" required>
+                                        <div class="input-group-append iconapprence">
+                                            <div class="hides">
+                                                <span (click)="changetype()"
+                                                    class="fa fa-fw fa-eye icon-eye field-icon toggle-password"></span>
+                                            </div>
+                                        </div>
+                                    <div class="invalid-feedback text-left" *ngIf="f.password.touched && f.password.invalid"
+                                        style="display: block;">
+                                        <span *ngIf="f.password?.errors.required">Password is
+                                            required
+                                            *</span>
+                                        <span *ngIf="f.password?.errors.pattern">At least 8 characters in length, Lowercase
+                                            letters, Uppercase letters,Numbers,Special characters
+                                            *</span>
+                                    </div>
+        
+                                </div>
+                            </div>
+        
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12">
+                                <div class="form-group mred-group01">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" formControlName="isagree">
+                                            <span class="SetCheckBoxItem">I have read & agree to
+                                                the <a href="#" style="color:#eb0101;">Terms &
+                                                    Conditions</a> and <a href="#" style="color:#eb0101;">Privacy Policy</a> of
+                                                Mobiebook.</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+        
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-12 text-center">
+                                <button type="submit" class="Mred-submit-btns" (click)="registerUser()">Sign up</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-sm-12 text-center">
+                <div class="setsignuppagelink" style="margin-top: 0;text-align: center;">
+                    <p style="margin-right: 25px;">
+                        <a [routerLink]="['/authentication/login']">
+                            Already have been account ? <span style="color: #007bff;
+                            font-weight: 600;">Sign in</span>
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+</div>
+
+
+
+
+<div class="chartsectionset">
+    <div class="imagssetchart">
+        <i class="fa fa-comments" aria-hidden="true"></i>
+    </div>
+</div>
+
+<!-- <div class="alert alert-success alertmassageAll" *ngIf="showMessage == true">{{msgText}}</div>
+
+<section id="loginbanner" class="banner-section banner-loginset" *ngIf="loadpageViews == true">
+    <div class="overlay"></div>
+    <div class="bussiness-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-12 col-md-12">
+                    <div class="Mcredlogin-From-signUp">
+                        <div class="loginset-contain">
+                            <div class="row">
+                                <div class="col-sm-12">
+                                    <h2 class="loginHeading" style="text-align: center;padding-bottom: 10px;">Sign Up
+                                    </h2>
+                                    <form action="./investor-signup.html" method="post" role="form"
+                                        class="php-email-form">
+                                        <div class="SelectToRegistration">
+                                            <div class="cc-selector">
+                                                <input checked="checked" id="investors" type="radio" name="signup"
+                                                    (change)="labView($event)" value="investors" />
+                                                <label class="drinkcard-cc investors" for="investors">
+                                                    <div class="image-innerSection">
+                                                        <div class="image-contain">
+                                                            <img src="./assets/img/investor.svg" />
+                                                            <p>Lab</p>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                                <input id="business" type="radio" name="signup" value="business" />
+                                                <label class="drinkcard-cc business" for="business">
+                                                    <div class="image-innerSection">
+                                                        <div class="image-contain">
+                                                            <img src="./assets/img/investor.svg" />
+                                                            <p>Photograper</p>
+                                                        </div>
+                                                    </div>
+                                                </label>
+
+                                                <input id="partner" type="radio" name="signup" value="partner" />
+                                                <label class="drinkcard-cc partner" for="partner">
+                                                    <div class="image-innerSection">
+                                                        <div class="image-contain">
+                                                            <img src="./assets/img/investor.svg" />
+                                                            <p>Other</p>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="text-center" style="padding-top: 30px;">
+                                            <div class="row">
+                                                <div class="col-sm-12 col-md-12 setSingUp">
+                                                    <button type="submit" class="Mred-submit-btn"
+                                                        (click)="labView()">PROCEED</button>
+                                                </div>
+                                                <div class="col-sm-12 col-md-12">
+                                                    <a [routerLink]="['/authentication/login']" class="sigupReflect">Back to log
+                                                       <img src="./assets/img/next.svg" /></a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<section id="loginbanner " class="banner-section banner-loginset signUpSetContain signUpBard banner-registration"
+    *ngIf="labViews == true">
+    <div class="overlay"></div>
+    <div class="bussiness-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-12 col-md-12">
+                    <div class="investor-signup ">
+                        <div class="investor-signup-conatin">
+                            <div class="row">
+                                <div class="col-sm-4 hideResponsive">
+                                    <img src="../../../../assets/img/inverster.png" class="imgbannerTages" />
+                                </div>
+                                <div class="col-sm-12 col-md-8">
+                                    <form action="#" method="post" [formGroup]="registerForm" role="form"
+                                        class="php-email-form">
+                                        <div class="signUpSectionAll">
+                                            <div class="row">
+                                                <div class="col-sm-12 col-md-8">
+                                                    <h2 class="loginHeading" style="margin-bottom: 15px;">Sign Up
+                                                    </h2>
+                                                    <p class="signUPparagrap">Fill the details below and be a <span
+                                                            style="color:#eb0101;">MobieBook</span></p>
+                                                </div>
+                                                <div class="col-sm-12 col-md-4">
+                                                    <div class="form-group mred-group">
+                                                        <select formControlName="type"
+                                                            class="form-control form-control-line">
+                                                            <option *ngFor="let type of masterDetail" [value]="type.Id">
+                                                                {{type.Text}}
+                                                            </option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-12 col-md-6">
+                                                    <div class="form-group mred-group01">
+                                                        <label class="mred-lable-inpLable">Full Name</label>
+                                                        <input formControlName="name" type="text" maxlength="45"
+                                                            class="form-control Mred-input01"
+                                                            placeholder="Enter your name" name="Name" required>
+
+                                                        <div class="invalid-feedback"
+                                                            *ngIf="f.name.touched && f.name.invalid"
+                                                            style="display: block;">
+                                                            <span *ngIf="f.name.errors.required">Full Name is required
+                                                                *</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12 col-md-6">
+                                                    <div class="form-group mred-group01">
+                                                        <label class="mred-lable-inpLable">Email</label>
+                                                        <input type="text" formControlName="email" maxlength="100"
+                                                            class="form-control Mred-input01"
+                                                            placeholder="Enter your email" name="Name" required>
+
+                                                        <div class="invalid-feedback"
+                                                            *ngIf="f.email.touched && f.email.invalid"
+                                                            style="display: block;">
+                                                            <span *ngIf="f.email.errors.required">Email id is required
+                                                                *</span>
+                                                            <span *ngIf="f.email.errors.email">Email id is not valid.
+                                                                *</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-12 col-md-6">
+                                                    <div class="form-group mred-group01">
+                                                        <label class="mred-lable-inpLable">Mobile Number</label>
+                                                        <div class="row">
+                                                            <div class="col-sm-4 pr-0">
+                                                                <select
+                                                                    class="form-control mred-lable-inp setSignUPData MobibookSignUpSelect"
+                                                                    id="sel1">
+                                                                    <option>+91</option>
+                                                                    <option>+01</option>
+                                                                    <option>+02</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-sm-8 ">
+                                                                <input type="number" formControlName="mobileno"
+                                                                    class="form-control Mred-input01" onKeyPress="if(this.value.length==10) return false;"
+                                                                    placeholder="Enter your number" name="Name">
+                                                                    <div class="invalid-feedback"
+                                                                    *ngIf="f.mobileno.touched && f.mobileno.invalid"
+                                                                    style="display: block;">
+                                                                    <span *ngIf="f.mobileno.errors.required">Mobile Number is required
+                                                                        *</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="validate"></div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12 col-md-6">
+                                                    <div class="form-group mred-group01">
+                                                        <label class="mred-lable-inpLable">Referral Code (If
+                                                            Any)</label>
+                                                        <input type="text" formControlName="referalcode"
+                                                            class="form-control Mred-input01"
+                                                            placeholder="Enter your referral code" name="Name">
+                                                        <div class="validate"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-12 col-md-6">
+                                                    <div class="form-group mred-group01">
+                                                        <label class="mred-lable-inpLable">Password</label>
+                                                        <input type="password" formControlName="password"
+                                                            class="form-control Mred-input01" maxlength="100"
+                                                            placeholder="Enter your password" name="Name" required>
+
+                                                        <div class="invalid-feedback"
+                                                            *ngIf="f.password.touched && f.password.invalid"
+                                                            style="display: block;">
+                                                            <span *ngIf="f.password.errors.required">Password is
+                                                                required
+                                                                *</span>
+                                                                <span *ngIf="f.password.errors.pattern">At least 8 characters in length, Lowercase letters, Uppercase letters,Numbers,Special characters
+                                                                    *</span>
+                                                        </div>
+                                                        
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12 col-md-6">
+                                                    <div class="form-group mred-group01">
+                                                        <label class="mred-lable-inpLable">Confirm Password</label>
+                                                        <input type="password" formControlName="confirmpassword"
+                                                            class="form-control Mred-input01" maxlength="100"
+                                                            placeholder="Enter your confirm password" name="Name" required>
+
+                                                        <div class="invalid-feedback"
+                                                            *ngIf="f.confirmpassword.touched && f.confirmpassword.invalid"
+                                                            style="display: block;">
+                                                            <span *ngIf="f.confirmpassword.errors.required">Confirm
+                                                                Password is required
+                                                                *</span>
+                                                                <span *ngIf="f.confirmpassword.errors.pattern">At least 8 characters in length, Lowercase letters, Uppercase letters,Numbers,Special characters
+                                                                    *</span>
+                                                            <span
+                                                                *ngIf="f.confirmpassword.errors.confirmedValidator">Confirm
+                                                                Password and Confirm Password must be match.
+                                                                *</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-12">
+                                                    <div class="form-group mred-group01">
+                                                        <div class="checkbox">
+                                                            <label>
+                                                                <input type="checkbox" formControlName="isagree"
+                                                                    value="">
+                                                                <span class="SetCheckBoxItem">I have read & agree to
+                                                                    the <a href="#" style="color:#eb0101;">Terms &
+                                                                        Conditions</a> and <a href="#"
+                                                                        style="color:#eb0101;">Privacy Policy</a> of
+                                                                    Mobiebook.</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-sm-12">
+                                                    <div class="setsignuppagelink" style="margin-top: 0;text-align: center;">
+                                                        <p style="display: inline-block;margin-right: 25px;">
+                                                            <a [routerLink]="['/authentication/login']">
+                                                                <img src="../../../../assets/img/next.svg" style="
+                                                        margin-right: 10px;">Back to loging
+                                                            </a>
+                                                        </p>
+                                                        <p style="display: inline-block;">
+                                                            <a [routerLink]="['/home']">
+                                                                <img src="../../../../assets/img/next.svg" style="
+                                                        margin-right: 10px;">Back to Home
+                                                            </a>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-sm-12 text-center">
+                                                    <button type="submit" class="Mred-submit-btn"
+                                                        (click)="registerUser()">SIGN UP</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+
+<footer id="footer">
+    <div class="footer-top">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-12 col-lg-5 col-md-5">
+                    <div class="imageSectionfooter">
+                        <div class="footer-aboutus">
+                            <img src="../../../../assets/img/mobile-book.png">
+                        </div>
+                        <div class="setSelactionHelp">
+                            <p>Talati Apartments, SV Rd, Andheri West, Mumbai - 400058.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-lg-7 col-md-7">
+                    <div class="row">
+                        <div class="col-lg-5 col-md-5 col-sm-6 col-12 footer-links">
+                            <div class="settextfloat">
+                                <h4>Contact Us</h4>
+                                <ul>
+                                    <li><a href="#">hellomobiebook@gmail.com</a></li>
+                                    <li><a href="#"> Support - +91 983 3963 738 </a></li>
+                                    <li> <a href="#">Office - +91 983 3963 738</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-4 col-sm-6 col-12 footer-links ">
+                            <div class="settextfloat">
+                                <h4>Information</h4>
+                                <ul>
+                                    <li> <a href="#">Privacy Policy </a></li>
+                                    <li> <a href="#">Terms &amp; Conditions </a></li>
+                                    <li> <a href="#">FAQ</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-3 col-sm-6 col-12 footer-links ">
+                            <div class="settextfloat">
+                                <h4>Links</h4>
+                                <ul>
+                                    <li> <a [routerLink]="['/home/aboutus']">About Us</a></li>
+                                    <li> <a href="#">Contact Us</a></li>
+                                    <li> <a href="#">How It Works</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="lastsection">
+        <div class="container">
+            <div class="copyright">
+                <div class="row">
+                    <div class="col-lg-6 col-md-6 col-sm-12 footer-links">
+                        <p class="settagfooter">© Copyright Secure. All rights reserved.</p>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12 footer-sociel">
+                        <ul class="foot_iconset">
+                            <li><a href="#"><i class="icon-social-instagram"></i></a></li>
+                            <li><a href="#"><i class="icon-social-linkedin"></i> </a></li>
+                            <li><a href="#"><i class="icon-social-facebook"></i></a></li>
+                            <li><a href="#"><i class="icon-social-twitter"></i></a></li>
+                            <li><a href="#"> <i class="icon-social-youtube"></i> </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<div class="toast fade show" role="alert" data-autohide="false" aria-live="assertive" aria-atomic="true" *ngIf="errorShowToast == true">
+    <div class="toast-header">
+        <strong class="mr-auto">Alert </strong>
+        <small>11 mins ago</small>
+        <button type="button" class="ml-2 mb-1 close" (click)="errorAlert()">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="toast-body error-toast">
+        Username & password invalid !
+    </div>
+</div> -->

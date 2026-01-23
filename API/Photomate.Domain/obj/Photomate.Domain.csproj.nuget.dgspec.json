@@ -1,0 +1,132 @@
+{
+  "format": 1,
+  "restore": {
+    "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Domain\\Photomate.Domain.csproj": {}
+  },
+  "projects": {
+    "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Domain\\Photomate.Domain.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Domain\\Photomate.Domain.csproj",
+        "projectName": "Photomate.Domain",
+        "projectPath": "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Domain\\Photomate.Domain.csproj",
+        "packagesPath": "C:\\Users\\Sarfaraz Khan\\.nuget\\packages\\",
+        "outputPath": "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Domain\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Sarfaraz Khan\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0": {
+            "targetAlias": "net5.0",
+            "projectReferences": {
+              "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Model\\Photomate.Model.csproj": {
+                "projectPath": "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Model\\Photomate.Model.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "dependencies": {
+            "MySql.Data": {
+              "target": "Package",
+              "version": "[8.0.23, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.102\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Model\\Photomate.Model.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Model\\Photomate.Model.csproj",
+        "projectName": "Photomate.Model",
+        "projectPath": "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Model\\Photomate.Model.csproj",
+        "packagesPath": "C:\\Users\\Sarfaraz Khan\\.nuget\\packages\\",
+        "outputPath": "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Model\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\Sarfaraz Khan\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0": {
+            "targetAlias": "net5.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0": {
+          "targetAlias": "net5.0",
+          "dependencies": {
+            "MySql.Data": {
+              "target": "Package",
+              "version": "[8.0.23, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.102\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

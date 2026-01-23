@@ -1,0 +1,146 @@
+<app-buy-coupon-request *ngIf="isrequest == true" [couponDetail]="selectedCoupon" [isview]="viewBuy"
+    (buyPopClick)="acceptRequest($event)"></app-buy-coupon-request>
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">Manage Coupons</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
+                <li class="breadcrumb-item active">Coupon</li>
+            </ol>
+            <!-- <button type="button" (click)="buyCoupon()" class="btn waves-effect waves-light btn-danger m-l-15"><i
+                    class="fa fa-plus-circle"></i> Buy
+                Coupon</button> -->
+        </div>
+    </div>
+</div>
+
+
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <div class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer p-0">
+                        <div class="row" style="margin-right: 0px;margin-left: 0px;">
+                            <form [formGroup]="filterForm" style="width: 100%;display:flex;">
+                                <div class="col-sm-12 col-md-6">
+                                    <div class="dataTables_length" style="margin-right: 15px;">
+                                        <label style="padding-left:5px;">Type
+                                            <select formControlName="type" class="form-control form-control-line">
+                                                <option *ngFor="let type of couponTypes" [value]="type.Id">{{type.Text}}
+                                                </option>
+                                            </select>
+
+                                        </label>
+                                    </div>
+                                    <div class="dataTables_length">
+                                        <label style="padding-left:5px;">status
+                                            <select formControlName="status" class="form-control form-control-line">
+                                                <option *ngFor="let type of status" [value]="type.Id">{{type.Text}}
+                                                </option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-sm-12 col-md-6">
+                                    <div class="dataTables_filter">
+                                        <label>Search:
+                                            <input type="search" class="form-control form-control-sm" placeholder="">
+                                        </label>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <table class="table table-hover nowrap table-striped">
+                            <thead>
+                                <tr role="row">
+                                    <th>Title</th>
+                                    <th>Customer
+                                    </th>
+                                    <th class="text-center">Transaction id
+                                    </th>
+                                    <th class="text-center">Price
+                                    </th>
+                                    <th class="text-center">Quantity
+                                    </th>
+                                    <th class="text-center">Total Amount
+                                    </th>
+                                    <th class="text-center">Transaction Date
+                                    </th>
+                                    <th ></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let cou of requestCoupon">
+                                    <td>
+                                        <div class="d-flex no-block">
+                                            <div class="text-ellipsis">
+                                                <a href="javascript:void(0)">{{cou.CouponTitle}}</a>
+                                                <span> ({{cou.CouponType}}) ({{cou.CouponQuantity}})</span>
+                                            </div>
+                                        </div>
+
+                                    </td>
+                                    <td>
+                                        {{cou.FullName}}
+                                        <span>{{cou.BusinessName}}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {{cou.RequestId}}
+                                    </td>
+                                    <td class="text-center">
+                                        <div>{{cou.CurrencySymbol}} {{getpricetofix(cou.CouponPrice)}}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div>{{cou.RequestQuantity}}</div>
+                                    </td>
+
+
+                                    <td class="text-center">
+                                        <div>{{cou.CurrencySymbol}} {{cou.TotalPrice.toFixed(2)}}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div>{{cou.CreatedOn | date: dateFormat}}</div>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <span *ngIf="cou.StatuId === 2">
+                                            <a (click)="viewCoupon(cou)"><i class="fa fa-eye"></i></a></span> &nbsp;
+                                        <!-- <span><a  (click)="confirmation(cou.CouponId)"><i class="text-danger fa fa-trash"></i></a></span>  -->
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="row" style="margin-right: 0px;  margin-left: 0px;">
+                            <div class="col-sm-12 col-md-5">
+                                <div class="dataTables_info">
+                                    Showing 1 to 10 of 57
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-7">
+                                <div class="dataTables_paginate paging_simple_numbers">
+                                    <ul class="pagination">
+                                        <li class="paginate_button page-item previous disabled">
+                                            <a class="page-link"> Previous</a>
+                                        </li>
+                                        <li class="paginate_button page-item active"><a class="page-link">1</a></li>
+                                        <li class="paginate_button page-item "><a class="page-link">2</a></li>
+                                        <li class="paginate_button page-item "><a class="page-link">3</a></li>
+                                        <li class="paginate_button page-item "><a class="page-link">4</a></li>
+                                        <li class="paginate_button page-item "><a class="page-link">5</a></li>
+                                        <li class="paginate_button page-item "><a class="page-link">6</a></li>
+                                        <li class="paginate_button page-item next"><a class="page-link">Next</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

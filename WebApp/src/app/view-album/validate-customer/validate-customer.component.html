@@ -1,0 +1,72 @@
+<div class="row" *ngIf="isview == false">
+    <p>It's seems you are using wrong album path.</p>
+</div>
+<div class="newHeaderSection">
+    <app-view-toolbar></app-view-toolbar>
+</div>
+<div class="container">
+    <div class="col-sm-12 col-md-4 col-xs-4 offset-md-4">
+
+        <div class="registration-form">
+            <div class="formSectionAll text-center">
+                <form action="#" [formGroup]="customerForm" method="post" role="form" class="php-email-form">
+                    <h1 class="loginHeading">Welcome</h1>
+                    <div class="form-group mred-group" style="padding-top: 25px !important;">
+                        <div class="input-group">
+                            <input type="text" formControlName="code" class="form-control inputloginsets"
+                                placeholder="uniq code" required>
+                        </div>
+                        <div class="invalid-feedback" *ngIf="f.code.touched && f.user.invalid"
+                            style="display: block;padding-left: 15px;" required>
+                            <span *ngIf="f.code.errors.required">Uniq code is required *</span>
+                        </div>
+                    </div>
+                    <div class="form-group mred-group">
+                        <div class="input-group">
+                            <input type="text" formControlName="email"
+                                class="form-control inputloginsets setpassword-radi" id="input-pwd" placeholder="Email">
+                            <div class="input-group-append iconapprence">
+                                <div class="hides">
+                                    <span toggle="#input-pwd" class="field-icon toggle-password"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="form-group mred-group">
+                        <div class="input-group">
+                            <input type="text" formControlName="mobile"
+                                class="form-control inputloginsets setpassword-radi" id="input-pwd"
+                                placeholder="Mobile">
+                            <div class="input-group-append iconapprence">
+                                <div class="hides">
+                                    <span toggle="#input-pwd" class="field-icon toggle-password"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+                    <div class="text-center">
+                        <button type="submit" class="Mred-submit-btns" (click)="validate()">Submit</button>
+                    </div>
+
+
+                    <div class="setsignuppagelink">
+
+                    </div>
+
+                    <div>
+                        <p>
+
+                        </p>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<button *ngIf="this.showButton" (click)="addToHomeScreen()">Add to home screen</button>

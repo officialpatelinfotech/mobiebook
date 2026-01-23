@@ -1,0 +1,146 @@
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">Add Coupons</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
+                <li class="breadcrumb-item active">Coupon</li>
+            </ol>
+            <button type="button" (click)="back()" class="btn waves-effect waves-light btn-rounded btn-danger m-l-15"><i
+                    class="fa fa-arrow-left"></i> Back
+            </button>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form [formGroup]="addCouponForm">
+                            <div class="form-body">
+                                <h3 class="card-title" style="padding: 0px !important;">Add Coupon Details</h3>
+                                <hr>
+                                <div class="row p-t-20">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label class="control-label">Title</label>
+                                            <input formControlName="title" type="text" placeholder="Title"
+                                                class="form-control">
+                                            <div *ngIf="f.title.touched && f.title.invalid" class="alert alert-danger">
+                                                <div *ngIf="f.title.errors.required">Title is required.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label class="control-label">Type</label>
+                                            <select formControlName="type" class="form-control form-control-line">
+                                                <option *ngFor="let type of masterDetail" [value]="type.Id">
+                                                    {{type.Text}}
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label class="control-label">Quantity</label>
+                                            <input formControlName="quantity" type="number" min="0"
+                                                placeholder="Quantity" class="form-control form-control-line">
+                                            <div *ngIf="f.quantity.touched && f.quantity.invalid"
+                                                class="alert alert-danger">
+                                                <div *ngIf="f.quantity.errors.required">Quantity is required.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <!--/row-->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label">Country</label>
+                                            <select formControlName="country" class="form-control form-control-line">
+                                                <option *ngFor="let cty of countryDetail" [value]="cty.CountryId">
+                                                    {{cty.CountryName}} {{cty.CurrencySymbol}}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label">Price</label>
+                                            <input formControlName="price" type="number" min="0" placeholder="Price"
+                                                class="form-control form-control-line">
+                                            <div *ngIf="f.price.touched && f.price.invalid" class="alert alert-danger">
+                                                <div *ngIf="f.price.errors.required">Price is required.</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <!--/row-->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label">Start On</label>
+                                            <div class="form-group input-group">
+                                                <input class="form-control" placeholder="dd-mm-yyyy" name="dp"
+                                                    formControlName="starton" ngbDatepicker #ds="ngbDatepicker" readonly>
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-outline-secondary fa fa-calendar"
+                                                        (click)="ds.toggle()" type="button"></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label">Expire On</label>
+                                            <div class="form-group input-group">
+                                                <input class="form-control" placeholder="dd-mm-yyyy" name="dp"
+                                                    formControlName="expireon" ngbDatepicker #de="ngbDatepicker" readonly>
+                                                <div class="input-group-append">
+                                                    <button class="btn btn-outline-secondary fa fa-calendar"
+                                                        (click)="de.toggle()" type="button"></button>
+                                                </div>
+                                            </div>                                            
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label">Status</label>
+                                            <input formControlName="isactive" type="checkbox">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="input-file-max-fs">Image</label>
+                                            <div>
+                                                <input type="file" id="input-file-max-fs" class="dropify"
+                                                    data-max-file-size="1M"
+                                                    (change)="uploadFile($event.target.files)" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="form-actions">
+                                <button type="button" (click)="addCouponDetail()" class="btn waves-effect waves-light btn-danger"> <i
+                                        class="fa fa-check"></i> Save</button>
+                                <button type="button" (click)="back()" class="btn btn-inverse">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

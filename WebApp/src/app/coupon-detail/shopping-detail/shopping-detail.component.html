@@ -1,0 +1,175 @@
+<confirmation-popup></confirmation-popup>
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">Cart</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
+                <li class="breadcrumb-item active">Cart</li>
+            </ol>
+            <button type="button" (click)="buyCoupon()" class="btn waves-effect waves-light btn-danger m-l-15"><i
+                    class="fa fa-plus-circle" style="position: relative; top: 0px;"></i> Buy
+                Coupon</button>
+        </div>
+    </div>
+</div>
+<div *ngIf="cartDetailItem.length == 0 && cartDetailItemBulk.length == 0">
+    Your cart is blank
+</div>
+<div class="row">
+    <div class="col-md-12" *ngIf="cartDetailItem.length > 0">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive ">
+                    <table class="table color-table danger-table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Quantity</th>
+                                <th class="text-right">Price</th>
+                                <th class="text-right">Total Amount</th>
+                                <th class="text-right"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let cou of cartDetailItem">
+                                <td> <a href="javascript:void(0)">{{cou.CouponTitle}}</a>
+                                    <span> ({{cou.CouponType}})</span>
+                                </td>
+                                <td class="text-right" style="width: 135px;">
+                                    <div>
+                                        <input min="1" [(ngModel)]="cou.RequestQuantity" type="number"
+                                            class="form-control" (keyup)="updateQty(cou)" />
+                                    </div>
+                                </td>
+                                <td class="text-right">{{cou.CurrencySymbol}} {{cou.CouponPrice.toFixed(2)}}</td>
+                                <td class="text-right">{{cou.CurrencySymbol}}{{cou.TotalPrice.toFixed(2)}}</td>
+                                <td class="text-right"><span><a (click)="confirmation(cou.RequestId)"><i
+                                                class="text-danger fa fa-trash"></i></a></span></td>
+
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-8 align-self-center">
+            </div>
+            <div class="col-md-4 align-self-center text-right">
+                <div class="card" style="margin-right: 4px;">
+                    <div class="card-body">
+                        <table class="table-padded m-b-0 text-right" style="width: 100%;">
+                            <tr>
+                                <td class=" text-right"><strong>Total Amount : </strong></td>
+                                <td class=" text-right">{{currencySymbol}}{{totalAmount.toFixed(2)}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-8 align-self-center">
+            </div>
+            <div class="col-md-4 align-self-center text-right pb-2">
+                <div class="d-flex justify-content-end align-items-center">
+                    <button type="button" (click)="continuePayment()"
+                        class="btn waves-effect waves-light btn-danger m-l-15" style="margin-right: 4px;"><i
+                            class="fa fa-plus-circle"></i>
+                        Payment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div *ngIf="cartDetailItemBulk.length > 0" class="col-12">
+    
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table color-table danger-table table-striped">
+                            <thead>
+                                <tr class="header">
+                                    <th>
+                                        Title
+                                    </th>
+                                    <th>
+                                        Quantity
+                                    </th>
+                                    <th class="text-right">
+                                        Estimate Price
+                                    </th>
+                                    <th class="text-right">
+                                        Total Estimate Price
+                                    </th>
+                                    <th>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let cou of cartDetailItemBulk">
+                                    <td>
+                                        <a>{{cou.CouponTitle}}</a>
+                                        <span>({{cou.CouponType}})</span>
+                                    </td>
+                                    <td style="width: 135px;">
+                                        <input min="1" [(ngModel)]="cou.RequestQuantity" type="number"
+                                            class="form-control" (keyup)="updateQty(cou)" />
+                                    </td>
+                                    <td class="text-right">
+                                        {{cou.CurrencySymbol}}
+                                            {{cou.CouponPrice.toFixed(2)}}
+                                    </td>
+                                    <td class="text-right">
+                                       
+                                            {{cou.CurrencySymbol}}{{cou.TotalPrice.toFixed(2)}}
+                                    </td>
+                                    <td>
+                                        <span><a (click)="confirmation(cou.RequestId)"><i
+                                                    class="text-danger fa fa-trash"></i></a></span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+       
+
+        <div class="row">
+            <div class="col-md-8 align-self-center">
+            </div>
+            <div class="col-md-4 align-self-center text-right">
+                <div class="card" style="margin-right: 4px;">
+                    <div class="card-body">
+                        <table class="table-padded m-b-0 text-right" style="width: 100%;">
+                            <tr>
+                                <td class=" text-right"><strong>Total Estimated Amount  : </strong></td>
+                                <td class=" text-right">{{currencySymbol}}{{totalEstimateAmount.toFixed(2)}}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="row">
+                <div class="col-md-5 align-self-center">
+                </div>
+                <div class="col-md-7 align-self-center text-right pb-2">
+                    <div class="d-flex justify-content-end align-items-center">
+                        <button type="button" (click)="continueBulkPayment()"
+                            class="btn waves-effect waves-light btn-danger m-l-15"><i class="fa fa-plus-circle"></i>
+                            Request</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

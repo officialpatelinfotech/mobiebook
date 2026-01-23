@@ -1,0 +1,76 @@
+<div *ngIf="isview == true" class="modal" tabindex="-1" role="dialog" style="display:block!important">
+    <div class="modal-dialog custom-alert" role="document">
+        <div class="modal-content">
+
+            <div class="modal-body">
+                <h3 class="card-title">Coupon Request</h3>
+                <hr>
+                <div class="row">
+                    
+                        <div class="col-md-6">
+                            <p><strong> Title :</strong> {{couponDetail.CouponTitle}} </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Type :</strong> {{couponDetail.CouponType}} </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Price:</strong> {{couponDetail.CurrencySymbol}} {{getpricetofix(couponDetail.CouponPrice)}}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Request Quantity:</strong> {{couponDetail.RequestQuantity}}</p>
+                        </div>                       
+                       
+                    </div>
+                
+                <div class="row">
+                    <form [formGroup]="couponForm" class="col-12">
+                        <div class="form-body">
+                            <div class="row">
+                               
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label">Quantity</label>
+                                            <input formControlName="quantity" type="number" min="0"
+                                                placeholder="Quantity" class="form-control form-control-line">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label">Request Price</label>
+                                            <input formControlName="requestprice" type="number" min="0"
+                                                placeholder="Price" class="form-control form-control-line">
+                                        </div>
+                                    </div>
+                               
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <b>Total Price :</b> {{couponDetail.CurrencySymbol}}{{totalPrice.toFixed(2)}}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label class="control-label">Notes</label>
+                                        <textarea formControlName="message" placeholder="message"
+                                            class="form-control form-control-line"></textarea>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                        <!--/row-->
+
+                        <div class="form-actions">
+                            <button type="button" (click)="buy()" class="btn btn-success"> <i class="fa fa-check"></i>
+                                Approve</button>
+                            <button type="button" (click)="cancel()" class="btn btn-inverse">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

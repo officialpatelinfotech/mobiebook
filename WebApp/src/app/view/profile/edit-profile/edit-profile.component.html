@@ -1,0 +1,184 @@
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">Edit Profile</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a>Home</a></li>
+                <li class="breadcrumb-item active">Profile</li>
+
+            </ol>
+            <button type="button" (click)="back()" class="btn waves-effect waves-light btn-danger m-l-15"><i
+                    class="fa fa-arrow-left"></i> Back
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <!-- Column -->
+    <div class="col-lg-4 col-xlg-3 col-md-5">
+        <div class="card">
+            <div class="user-bg"> 
+                <!-- <img width="100%" height="225px" alt="user" src="../../../../assets/img/user.jpg"> -->
+            </div>
+            <div class="card-body">
+                <!-- .row -->
+                <div class="row text-center m-t-10">
+                    <div class="col-md-6 border-right">
+                        <strong>Name</strong>
+                        <p>{{profileData.FullName}}</p>
+                    </div>
+                    <div class="col-md-6"><strong>Occupation</strong>
+                        <p>{{profileData.BusinessName}}</p>
+                    </div>
+                </div>
+                <hr>
+                <!-- /.row -->
+                <!-- .row -->
+                <div class="row text-center m-t-10">
+                    <div class="col-md-6 border-right"><strong>Email ID</strong>
+                        <p>{{profileData.Email}}</p>
+                    </div>
+                    <div class="col-md-6"><strong>Phone</strong>
+                        <p>{{profileData.Phone}}</p>
+                    </div>
+                </div>
+                <!-- /.row -->
+                <hr>
+                <!-- .row -->
+                <div class="row text-center m-t-10">
+                    <div class="col-md-12"><strong>Address</strong>
+                        <p>{{profileData?.Address1}},{{profileData?.Address2}},{{profileData?.City}},
+                            <br>{{profileData?.Country}},{{profileData?.County}},{{profileData?.PinCode}}
+                        </p>
+                    </div>
+                </div>
+               
+               
+            </div>
+        </div>
+    </div>
+    <!-- Column -->
+    <!-- Column -->
+    <div class="col-lg-8 col-xlg-9 col-md-7">
+        <div class="card">
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs profile-tab" role="tablist">
+                <li class="nav-item"> <a class="nav-link active" data-toggle="tab" href="#settings" role="tab"
+                        aria-selected="true">Update Details</a> </li>
+            </ul>
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div class="tab-pane active" id="settings" role="tabpanel">
+                    <div class="card-body">
+                        <h5 class="card-title">Basic Information</h5>
+                        <form [formGroup]="editProfileForm" class="form-material form-horizontal">
+                            <div class="form-body">
+                                <div class="row p-t-20">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <input formControlName="fullname" type="text" placeholder="Title"
+                                                class="form-control">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row p-t-20">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <select
+                                                class="form-control mred-lable-inp setSignUPData MobibookSignUpSelect"
+                                                id="sel1">
+                                                <option>+91</option>
+                                                <option>+01</option>
+                                                <option>+02</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="form-group">
+                                            <input type="number" formControlName="phone"
+                                                class="form-control Mred-input01" placeholder="Enter your number"
+                                                name="Name">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <input formControlName="businessname" type="text"
+                                                placeholder="Business Name" class="form-control">
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <div class="row p-t-20">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <input formControlName="address1" type="text" placeholder="Address 1"
+                                                class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <input formControlName="address2" type="text" placeholder="Address 2"
+                                                class="form-control">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row p-t-20">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <input formControlName="country" type="text" placeholder="Country"
+                                                class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <input formControlName="county" type="text" placeholder="County"
+                                                class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <input formControlName="city" type="text" placeholder="City"
+                                                class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <input formControlName="pincode" type="text" placeholder="PinCode"
+                                                class="form-control">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="input-file-max-fs">Image</label>
+                                            <div>
+                                                <input type="file" id="input-file-max-fs" class="dropify"
+                                                    data-max-file-size="1M"
+                                                    (change)="uploadFile($event.target.files)" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="form-actions">
+                                <button type="button" (click)="saveProfileDetails()" class="btn  waves-effect waves-light btn-danger m-r-15"> <i
+                                        class="fa fa-check"></i> Save</button>
+                                <button type="button" class="btn btn-inverse  btn-dark waves-effect waves-light">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Column -->
+</div>
+
+
+

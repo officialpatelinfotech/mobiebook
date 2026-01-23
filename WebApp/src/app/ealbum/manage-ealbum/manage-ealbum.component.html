@@ -1,0 +1,157 @@
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">My Mobiebook</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
+                <li class="breadcrumb-item active">eAlbum</li>
+            </ol>
+            <button type="button" *ngIf="isAllowToAdd == true"  (click)="addAlbum()" class="btn waves-effect waves-light btn-danger m-l-15"><i
+                    class="fa fa-plus-circle"></i> Create
+                New</button>
+            <!-- <button type="button" (click)="addtempalte()" class="btn waves-effect waves-light btn-danger m-l-15"><i
+                    class="fa fa-plus-circle"></i> Add template
+            </button> -->
+
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="card-body " style="padding: 5px 8px 12px 10px;">
+                <div id="example_filter" class="dataTables_filter " style="float: left; margin-top: 0px;">
+                    <label>Search:<input type="search" (ngModelChange)="searchChange($event)" [(ngModel)]="searchText"
+                            class="form-control form-control-sm" placeholder="" aria-controls="example" style="margin-left: 0.5em;
+                            display: inline-block;
+                            width: auto;"></label>
+                </div>
+                <div style="float: right;">
+                    <div class="form-group">
+                        <select class="form-control " (ngModelChange)="selectChange($event)"
+                            [(ngModel)]="defaultStatus">
+                            <option *ngFor="let s of AlbumByStatus" [value]="s.Id">
+                                {{s.Text}}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-3 col-md-4 col-xlg-2 col-xs-12"
+        *ngFor="let c of albums| paginate: { itemsPerPage: PageSize, currentPage: pageIndex,totalItems:totalRecord }">
+        <div class="ribbon-wrapper card">
+            <div style="width: 100%;height: 165px;">
+                <img class="img-responsive border-rightset" alt="user" *ngIf="c.ImageLink != null" style="width: 100%;
+                height: 165px;" [src]="serverLink+c.UserId+'/'+c.EAlbumId+'/'+c.ImageLink" alt="{{c.EventTitle}}">
+                <img class="img-responsive border-rightset" alt="user" *ngIf="c.ImageLink == null" style="width: 100%;
+                 height: 165px;" src="../../../assets/img/blank.jpg" alt="{{c.EventTitle}}">
+            </div>
+            <div style="width: 100%;">
+                <div style="width: 50%;float: left;">
+                    <div class="ribbon ribbon-bookmark ribbon-default robinforimge"
+                        [ngClass]="addClassStatus(c.Status)">
+                        {{c.Status}}</div>
+                </div>
+                <div style="width: 50%;float: right; text-align: right;">
+                    <a class="pl-2 btn " (click)="publishConfirm(c)" title="Publish" *ngIf="c.Status != 'PUBLISHED'">
+                        <i class="ti-book"></i> Publish
+                    </a>
+                    <a class="pl-2 btn " *ngIf="c.Status == 'PUBLISHED'">
+                       &nbsp;
+                    </a>
+                </div>
+                <div style="clear: both;"></div>
+            </div>
+
+            <div class="ribbon-content">
+                <div>
+                    <div class="card-body" style="padding:10px;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="card-title" title="{{c.CoupleDetail}}">{{stringLimit(c.CoupleDetail)}}</h5>
+                            </div>
+                            <div class="col-md-6">
+
+                                <h5 class="card-title">
+                                    <a (click)="copy(c)" title="Copy Link">
+                                        <i class="icon-link" style="font-size:12px;"></i>
+                                        {{c.UniqId}} </a>
+                                </h5>
+                            </div>
+                        </div>
+
+                        <div>
+                            <!-- <span><i class="ti-control-play iconcolor"></i> Mp3: {{c.Mp3Title}}</span> -->
+                            <span><i class="ti-control-play iconcolor"></i> Date: {{c.CreatedOn|
+                                date:'dd/MM/yyyy'}}</span>
+                        </div>
+                        <div class="clearfix"></div>
+                        <footer class="card__actions align-items-center align-self-center p-1fotterEalbum">
+                            <div>
+                                <hr style="margin-top: 7px;margin-bottom: 10px;">
+                            </div>
+                            <div class="row" style="padding: 0px 25px;">
+                                <div class="col-md-4 p-0 pr-2">
+                                    <!-- <span><i class="ti-control-play iconcolor"></i> Mp3: {{c.Mp3Title}}</span> -->
+                                </div>
+                                <div class="col-md-8 p-0 text-right">
+                                    <a (click)="edit(c)" title="Edit" *ngIf="c.Status !== 'PUBLISHED'">
+                                        <i class="fa fa-edit" style="font-size:12px;"></i> </a>
+                                    <a (click)="getAlbumPages(c)" class="pl-2" title="View">
+                                        <i class="fa fa-eye"></i> </a> 
+                                    <a class="pl-2" href="https://web.whatsapp.com/" target="_blank" (click)="shareOnWhatsapp(c)" title="Share">
+                                        <i class="fa fa-share-alt"></i> </a>
+                                    <a class="pl-2" (click)="deleteConfirm(c)" title="Delete"
+                                        *ngIf="c.Status != 'PUBLISHED'">
+                                        <i class="ti-trash"></i> </a>
+                                </div>
+                            </div>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card">
+            <div class="col-sm-4">
+
+            </div>
+            <div class="row" style="margin-right: 0px;  margin-left: 0px;">
+                <div class="col-sm-12 col-md-5">
+                    <div class="dataTables_info">
+
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-7">
+                    <div class="dataTables_paginate paging_simple_numbers" *ngIf="totalRecord > 0">
+                        <!-- <app-pagination [initialPage]="pageIndex" [items]="totalRecord" (changePage)="onChangePage($event)"></app-pagination> -->
+                        <pagination-controls (pageChange)="onChangePage($event)"></pagination-controls>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="fullwidthModol" *ngIf="popUpEalbum == true">
+    <!-- <div class="full widthModel">
+        <div class="btnclosemodel" style="z-index: 999;">
+            <span data-name="btnClose" title="Close" (click)="closeEalbumPopup()">
+                <i class="close material-icons flipbook-icon-material flipbook-menu-btn" title="Close"
+                    style="width: 44px; font-size: 28px; color: rgb(238, 238, 238); background: rgba(0, 0, 0, 0.267);">close</i>
+            </span>
+        </div> -->
+        <app-view-album [pages]="albumPages" [albumdetail]="viewAlbum" (closePopUp)="closeEalbumPopup()"></app-view-album>
+    <!-- </div> -->
+</div>
+
+<confirmation-popup></confirmation-popup>

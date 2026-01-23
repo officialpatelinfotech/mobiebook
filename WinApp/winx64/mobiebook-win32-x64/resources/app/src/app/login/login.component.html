@@ -1,0 +1,74 @@
+<div class="newHeaderSection">
+    <app-tool-bar></app-tool-bar>
+</div>
+
+<div class="container">
+    <div class="col-sm-12 col-md-4 col-xs-4 offset-md-4">
+        <div  class="registration-form">
+            <div class="formSectionAll text-center">
+                <div class="alert alert-success alertmassageAll" *ngIf="showMessage == true">{{msgText}}</div>
+                <form action="#" [formGroup]="loginForm" method="post" role="form" class="php-email-form mobiboss">
+                    <h1>Arigato!</h1>
+                    <p>Thanks for visiting Mobiebook</p>
+                    <div class="form-group mred-group" style="padding-top: 25px !important;">
+                        <div class="input-group">
+                            <input type="text" formControlName="user" class="form-control inputloginsets"
+                                placeholder="Username / Mobile" required>
+                        </div>
+                        <div class="invalid-feedback" *ngIf="f.user.touched && f.user.invalid"
+                            style="display: block;padding-left: 15px;" required>
+                            <span *ngIf="f.user?.errors?.required">Username is required *</span>
+                        </div>
+                    </div>
+                    <div class="form-group mred-group">
+                        <div class="input-group">
+                            <input [type]="fieldTextType ? 'text' : 'password'" formControlName="password"
+                                class="form-control inputloginsets setpassword-radi" id="input-pwd" placeholder="Password"
+                                required>
+                            <div class="input-group-append iconapprence">
+                                <div class="hides">
+                                    <span toggle="#input-pwd"
+                                            class="fa fa-fw  field-icon toggle-password"
+                                            [ngClass]="{
+                                                'fa-eye-slash': !fieldTextType,
+                                                'fa-eye': fieldTextType
+                                              }"
+                                            (click)="togglePassword()"></span>
+                                         </div>
+                            </div>
+                        </div>
+                        <div class="invalid-feedback" *ngIf="f.password?.touched && f.password?.invalid"
+                            style="display: block;padding-left: 15px;">
+                            <span *ngIf="f.password?.errors?.required">Password is required *</span>
+                        </div>
+                    </div>
+        
+                    <div class="form-group mred-group">
+                        <div class="input-group">
+                            <input type="checkbox" formControlName="remember"> <span class="checkboste">Remember Me</span>
+                        </div>
+                    </div>
+        
+                    <div class="text-center">
+                        <button type="submit" class="Mred-submit-btns" (click)="loginUser()">Log
+                            in</button>
+                    </div>
+        
+        
+                    <div class="setsignuppagelink">
+                        
+                    </div>
+        
+                    <div>
+                        <p>
+                           
+                        </p>
+                    </div>
+        
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+

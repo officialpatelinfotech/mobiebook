@@ -1,0 +1,110 @@
+<div class="containOfstteper">
+    <form [formGroup]="albumForm" class="tab-wizard">
+        <div class="form-body">
+            <div class="row p-t-20">
+                <!-- <div class="col-md-5">
+                    <div class="form-group">
+                        <label class="control-label">Event Name</label>
+                        <input formControlName="eventname" type="text"
+                            placeholder="Event Name" class="form-control form-control-line">
+                        <div *ngIf="f.eventname.touched && f.eventname.invalid"
+                            class="alert alert-danger" style="margin-top: 5px;">
+                            <div *ngIf="f.eventname.errors.required">Event name is
+                                required.</div>
+                        </div>
+                    </div>
+                </div> -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="control-label">Mobiebook Name :</label>
+                        <input formControlName="couplename" placeholder="Project Name, Couple name, Event name" type="text" class="form-control">
+                        <div *ngIf="f.couplename.touched && f.couplename.invalid" class="alert alert-danger">
+                            <div *ngIf="f.couplename.errors.required">Couple Name is
+                                required.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="control-label">Image Type :</label>
+                        <select formControlName="type" class="form-control ">
+                            <option *ngFor="let type of imageType" [value]="type.Id">
+                                {{type.Text}}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <!-- <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="control-label">Logo :</label>
+                        <input formControlName="logo" type="file" (change)="attachedFile($event.target.files)" class="form-control">
+                    </div>
+                </div> -->
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <!-- <label class="control-label">Date :</label>
+                    <div class="form-group input-group">
+                        <input class="form-control" placeholder="dd-mm-yyyy" name="dp" formControlName="eventdate"
+                            ngbDatepicker #d="ngbDatepicker" readonly>
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-secondary fa fa-calendar" (click)="d.toggle()"
+                                type="button"></button>
+                        </div>
+                        <div *ngIf="f.eventdate.touched && f.eventdate.invalid" class="alert alert-danger">
+                            <div *ngIf="f.eventdate.errors.required">Event date is
+                                required.</div>
+                        </div>
+                    </div> -->
+                    <div class="form-group">
+                        <label class="control-label">App Icon :</label>
+                        <input formControlName="logo" type="file" (change)="attachedFile($event.target.files)" class="form-control">
+                        <span>(512 x 512 pixels png)</span>
+                    </div>
+                </div>
+                <div class="col-md-2" style="padding-top: 18px;">
+                    <img src="{{logoImg}}" style="width: 50px;" id="logo" />
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="control-label">Audio :</label>
+                        <ng-select [items]="albums" formControlName="audio" bindLabel="Title" bindValue="AudioId"
+                            [(ngModel)]="selectedAlbum">
+                        </ng-select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="control-label">Email :</label>
+                        <input formControlName="email" type="text" placeholder="Email" class="form-control">
+
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="control-label">Mobile :</label>
+                        <input formControlName="mobile" type="text" placeholder="Mobile" class="form-control">
+
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label class="control-label">Order ID/ Reference No. :</label>
+                        <input formControlName="remark" 
+                            placeholder="Remark" class="form-control" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<button type="button" *ngIf="isPublished == false" class="btn waves-effect waves-light btn-danger "
+    (click)="saveInfo()" style="float: right;"><i class="ti-save-alt"></i> Save & next <i
+        class="ti-arrow-right"></i></button>
+<button type="button" *ngIf="isPublished == true" class="btn waves-effect waves-light btn-danger "
+    (click)="loadPage()" style="float: right;">Next <i class="ti-arrow-right"></i></button>

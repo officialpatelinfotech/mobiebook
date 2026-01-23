@@ -1,0 +1,105 @@
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">Manage eAlbum</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
+                <li class="breadcrumb-item active">eAlbum</li>
+            </ol>
+            <button type="button" class="btn waves-effect waves-light btn-rounded btn-danger m-l-15"
+                (click)="backAlbum()"><i class="ti-arrow-left"></i> Back</button>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="padding: 30px 20px;">
+    <div class="stepperUI">
+        <div class="row">
+            <div class="col-md-12">
+                <div id="stepper1" class="bs-stepper">
+                    <div class="bs-stepper-header" style="padding: 10px 60px;">
+                        <div class="step" data-target="#test-l-1">
+                            <button type="button" class="btn step-trigger " (click)="getPageStep(1)">
+                                <span class="bs-stepper-circle">1</span>
+                                <span class="bs-stepper-label">Info</span>
+                            </button>
+                        </div>
+                        <div class="line"></div>
+                        <div class="step" data-target="#test-l-2">
+                            <button type="button" class="btn step-trigger"  (click)="getPageStep(2)">
+                                <span class="bs-stepper-circle">2</span>
+                                <span class="bs-stepper-label">Cover Pages</span>
+                            </button>
+                        </div>
+                        <div class="line"></div>
+                        <div class="step" data-target="#test-l-3">
+                            <button type="button" class="btn step-trigger "  (click)="getPageStep(3)">
+                                <span class="bs-stepper-circle">3</span>
+                                <span class="bs-stepper-label"> Pages </span>
+                            </button> 
+                        </div>
+                        <!-- <div class="line"></div>
+                        <div class="step" data-target="#test-l-4">
+                            <button type="button" class="btn step-trigger hidetrigger">
+                                <span class="bs-stepper-circle">4</span>
+                                <span class="bs-stepper-label">Slide Pages</span>
+                            </button>
+                        </div> -->
+                        <div class="line"></div>
+                        <div class="step" data-target="#test-l-5" >
+                            <button type="button" class="btn step-trigger "  (click)="getPageStep(4)">
+                                <span class="bs-stepper-circle">4</span>
+                                <span class="bs-stepper-label">Preview & publish</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card" style="margin: 0px 15px;">
+                        <div class="bs-stepper-content">
+                            <div id="test-l-1" class="content">
+                                <app-ealbum-info *ngIf="currentStep == 1" [elabumId]="albumId"
+                                    (saveInfoEvent)="saveInfoEvent($event)"></app-ealbum-info>
+                            </div>
+                            <div id="test-l-2" class="content">
+                                <app-ealbum-cover *ngIf="currentStep == 2" [ealbumId]="albumId"
+                                    [imgType]="pageUploadType" (saveCoverEvent)="saveCover($event)"></app-ealbum-cover>
+                            </div>
+                            <div id="test-l-3" class="content">
+                                <app-ealbum-pages *ngIf="currentStep == 3" [ealbumId]="albumId"
+                                    [imgType]="pageUploadType" (savePageEvent)="savePages($event)"></app-ealbum-pages>
+                            </div>
+                            <!-- <div id="test-l-4" class="content">
+                                <div class="containOfstteper">
+                                    
+                                </div>
+                                <div class="card">
+                                   
+                                </div>
+
+                                <div id="attachedBackImg"></div>
+                                <button class="btn waves-effect waves-light btn-dark privioBtnset"
+                                    (click)="previous()"><i class="ti-arrow-left"></i> Previous</button>
+                               
+                                <button *ngIf="viewAlbum?.Status != 'PUBLISHED'"
+                                    class="btn waves-effect waves-light btn-danger SaveAndNext" (click)="next()">
+                                    <i class="ti-save-alt"></i> Save & Next
+                                </button>
+                                <button type="button" *ngIf="viewAlbum?.Status == 'PUBLISHED'"
+                                    class="btn waves-effect waves-light btn-danger " (click)="next()"
+                                    style="float: right;">Next <i class="ti-arrow-right"></i></button>
+                            </div> -->
+                            <div id="test-l-5" class="content">
+                                <app-ealbum-publish  *ngIf="currentStep == 4" [ealbumId]="albumId"
+                                [imgType]="pageUploadType" (savePublishEvent)="savePublish($event)"></app-ealbum-publish>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  
+
+    <confirmation-popup></confirmation-popup>

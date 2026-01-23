@@ -1,0 +1,44 @@
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">Setting</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
+                <li class="breadcrumb-item active">Setting</li>
+            </ol>
+           
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div style="text-align: right;">
+                   
+                    <button *ngIf="isEdit== false" type="button" (click)="editSetting()" class="btn  waves-effect waves-light btn-danger m-r-15"> <i
+                        class="fa fa-pencil"></i> Edit</button>
+                </div>
+               <div *ngIf="settingDetail != undefined">
+                   <div *ngFor="let s of settingDetail">
+                       <div><strong>{{userType(s)}}  Create EAlbum : </strong>  
+                        <input type="checkbox" (change)="onChanged($event,s)" *ngIf="isEdit == true" [checked]="s.IsAlbumUpload"  [(ngModel)]="s.IsAlbumUpload" />
+                        <span> {{s.IsAlbumUpload == true? 'Active': 'In Active'}}</span></div>
+                   </div>
+               </div>
+               <hr/>
+               <div style="text-align: right;">
+                <button *ngIf="isEdit== true" type="button" (click)="cancelSetting()" class="btn btn-inverse  btn-dark waves-effect waves-light m-r-15"> <i
+                    class="fa fa-check"></i> Cancel</button>
+                    <button *ngIf="isEdit== true" type="button" (click)="saveSetting()" class="btn  waves-effect waves-light btn-danger m-r-15"> <i
+                        class="fa fa-check"></i> Save</button>
+               </div>
+              
+            </div>
+        </div>
+    </div>
+</div>

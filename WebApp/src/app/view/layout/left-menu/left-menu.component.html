@@ -1,0 +1,75 @@
+<aside class="left-sidebar">
+  <!-- Sidebar scroll-->
+  <div class="scroll-sidebar">
+    <!-- Sidebar navigation-->
+    <nav class="sidebar-nav">
+      <ul id="sidebarnav">
+        <li class="user-pro"> <a class=" waves-effect waves-dark" (click)="toogleMenu($event)"
+            aria-expanded="false">
+            <!-- <img src="../../../../assets/img/user.jpg" alt="user-img" class="img-circle"> -->
+            <span
+              class="hide-menu">{{userDetails?.FullName}}</span></a>
+          <!-- <ul aria-expanded="false" class="collapse"  [ngClass]="status ? 'in' : ''">
+            <li><a href="#"><i class="ti-user"></i> My Profile</a></li>
+            <li><a href="#"><i class="ti-wallet"></i> My Balance</a></li>
+            <li><a href="#"><i class="ti-settings"></i> Account Setting</a></li>
+            <li><a href="#"><i class="fa fa-power-off"></i> Logout</a></li>
+          </ul> -->
+        </li>
+        <li *ngFor="let m of menuDetail">
+          <a *ngIf="m.Url != blankString" class="waves-effect waves-dark" href="/#/auth{{m.Url}}"><i class="{{m.Icon}}"></i><span
+            class="hide-menu">{{m.PageTitle}}</span>
+          </a>
+          <span *ngIf="m.Url == blankString"class="nav-small-cap">{{m.PageTitle}}</span>
+          
+        </li>
+        <!-- <li>
+          <a class="waves-effect waves-dark" href="/#/dashboard/dashboard-view"><i class="icon-speedometer"></i><span
+              class="hide-menu">Dashboard</span>
+          </a>
+        </li>
+        <li class="nav-small-cap">--- MANAGE</li>
+        <li>
+          <a class="waves-effect waves-dark" href="/#/auth/manage-coupon" aria-expanded="false">
+            <i class="icon-credit-card"></i><span class="hide-menu">Manage Credit Coupons
+            </span>
+          </a>
+        </li>
+        <li>
+          <a class="waves-effect waves-dark" href="/#/dashboard/managelab" aria-expanded="false">
+            <i class="icon-picture"></i><span class="hide-menu">Manage Lab
+            </span>
+          </a>
+        </li>
+        <li>
+          <a class="waves-effect waves-dark" href="/#/dashboard/managephotographer" aria-expanded="false">
+            <i class="icon-picture"></i><span class="hide-menu">Manage eAlbums
+            </span>
+          </a>
+        </li>
+        <li>
+          <a class="waves-effect waves-dark" href="/#/dashboard/managephotographer" aria-expanded="false">
+            <i class="icon-camera"></i><span class="hide-menu">Manage Photographer
+            </span>
+          </a>
+        </li>
+        <li class="nav-small-cap">--- Settings</li>
+        <li>
+          <a class="waves-effect waves-dark" href="/#/dashboard/setting" aria-expanded="false">
+            <i class="icon-puzzle"></i><span class="hide-menu">Setting
+            </span>
+          </a>
+        </li>
+        <li>
+          <a class="waves-effect waves-dark" href="/#/dashboard/master" aria-expanded="false">
+            <i class="icon-bulb"></i><span class="hide-menu">Master
+            </span>
+          </a>
+        </li> -->
+
+      </ul>
+    </nav>
+    <!-- End Sidebar navigation -->
+  </div>
+  <!-- End Sidebar scroll-->
+</aside>

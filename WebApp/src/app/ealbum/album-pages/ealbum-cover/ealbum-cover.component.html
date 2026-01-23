@@ -1,0 +1,138 @@
+<div class="containOfstteper">
+    <div class="row">
+        <div class="col-sm-6">
+            <app-img-uploader *ngIf="frontImage == ''" [pageType]="pageType.Front" [viewtype]="pageType.Front"
+                [ismutilple]="false" (attachedImageEvent)="attachedFile($event,pageType.Front)">
+            </app-img-uploader>
+            <div class="card" *ngIf="frontImage != ''">
+                <div class="card-body bodylistcard">
+                    <h4 class="card-title">FRONT</h4>
+                    <label for="input-file-now">Please choose a file for <span
+                            style="text-transform: lowercase;">FRONT</span></label>
+
+                    <div class="dropify-wrapper">
+                        <button type="button" class="dropify-clear" (click)="removeImage(pageType.Front)">Remove
+                        </button>
+                        <div class="dropify-preview">
+                            <span class="dropify-render">
+                                <img src="{{frontImage}}">
+                            </span>
+                            <div class="dropify-infos">
+                                <div class="dropify-infos-inner">
+                                    <p class="dropify-filename">
+                                        <span class="dropify-filename-inner">
+                                            {{removeExtension(frontImgTitle)}}
+                                        </span>
+                                    </p>
+                                    <p class="dropify-infos-message">Drag and drop or click to replace</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <app-img-uploader *ngIf="backImage == ''" [pageType]="pageType.Back" [viewtype]="pageType.Back"
+                [ismutilple]="false" (attachedImageEvent)="attachedFile($event,pageType.Back)">
+            </app-img-uploader>
+            <div class="card" *ngIf="backImage != ''">
+                <div class="card-body bodylistcard">
+                    <h4 class="card-title">BACK</h4>
+                    <label for="input-file-now">Please choose a file for <span
+                            style="text-transform: lowercase;">BACK</span></label>
+                    <div class="dropify-wrapper">
+                        <button type="button" class="dropify-clear" (click)="removeImage(pageType.Back)">Remove
+                        </button>
+                        <div class="dropify-preview">
+                            <span class="dropify-render">
+                                <img src="{{backImage}}">
+                            </span>
+                            <div class="dropify-infos">
+                                <div class="dropify-infos-inner">
+                                    <p class="dropify-filename">
+                                        <span class="dropify-filename-inner">
+                                            {{removeExtension(backImgTitle)}}
+                                        </span>
+                                    </p>
+                                    <p class="dropify-infos-message">Drag and drop or click to replace</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6">
+            <app-img-uploader *ngIf="tpFrontImage == ''" [pageType]="pageType.TPFront" [viewtype]="pageType.TPFront"
+                [ismutilple]="false" (attachedImageEvent)="attachedFile($event,pageType.TPFront)">
+            </app-img-uploader>
+            <div class="card" *ngIf="tpFrontImage != ''">
+                <div class="card-body bodylistcard">
+                    <h4 class="card-title">Front TP/Page</h4>
+                    <label for="input-file-now">Please choose a file for <span
+                            style="text-transform: lowercase;">Front TP/Page</span></label>
+
+                    <div class="dropify-wrapper">
+                        <button type="button" class="dropify-clear" (click)="removeImage(pageType.TPFront)">Remove
+                        </button>
+                        <div class="dropify-preview">
+                            <span class="dropify-render">
+                                <img src="{{tpFrontImage}}">
+                            </span>
+                            <div class="dropify-infos">
+                                <div class="dropify-infos-inner">
+                                    <p class="dropify-filename">
+                                        <span class="dropify-filename-inner">
+                                            {{removeExtension(tpSheetFrontTitle)}}
+                                        </span>
+                                    </p>
+                                    <p class="dropify-infos-message">Drag and drop or click to replace</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6">
+            <app-img-uploader *ngIf="tpBackImage == ''" [pageType]="pageType.TPBack" [viewtype]="pageType.TPBack"
+                [ismutilple]="false" (attachedImageEvent)="attachedFile($event,pageType.TPBack)">
+            </app-img-uploader>
+            <div class="card" *ngIf="tpBackImage != ''">
+                <div class="card-body bodylistcard">
+                    <h4 class="card-title">Back TP/Page</h4>
+                    <label for="input-file-now">Please choose a file for <span
+                            style="text-transform: lowercase;">Back TP/Page</span></label>
+                    <div class="dropify-wrapper">
+                        <button type="button" class="dropify-clear" (click)="removeImage(pageType.TPBack)">Remove
+                        </button>
+                        <div class="dropify-preview">
+                            <span class="dropify-render">
+                                <img src="{{tpBackImage}}">
+                            </span>
+                            <div class="dropify-infos">
+                                <div class="dropify-infos-inner">
+                                    <p class="dropify-filename">
+                                        <span class="dropify-filename-inner">
+                                            {{removeExtension(tpSheetBackTitle)}}
+                                        </span>
+                                    </p>
+                                    <p class="dropify-infos-message">Drag and drop or click to replace</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<button class="btn waves-effect waves-light btn-dark privioBtnset" (click)="previous()"><i class="ti-arrow-left"></i>
+    Previous</button>
+<button *ngIf="isPublished == false" class="btn waves-effect waves-light btn-danger SaveAndNext" (click)="saveCover()">
+    <i class="ti-save-alt"></i> Save &
+    next <i class="ti-arrow-right"></i></button>
+<button type="button" *ngIf="isPublished == true" class="btn waves-effect waves-light btn-danger " (click)="next()"
+    style="float: right;">Next <i class="ti-arrow-right"></i></button>

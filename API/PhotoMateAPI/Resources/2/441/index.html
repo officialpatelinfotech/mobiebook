@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Multi-app PWA demo</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#607D8B">
+    <link rel="manifest" href="manifest.json">
+    
+  </head>
+  <body>
+	<div id="content"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('https://api.mobiebook.online/Resources/statichtml/sw.js', { scope: '/' }).then(function(registration) {
+          console.log('Service worker registration succeeded:', registration);
+        }).catch(function(error) {
+          console.log('Service worker registration failed:', error);
+        });
+      } else {
+        console.log('Service workers are not supported.');
+      }
+	  
+	function load_home () {
+		(window.event).preventDefault();
+	
+	let url = window.location.href.split('/');
+	if(url.length > 0){
+		let id = url[url.length];
+		let idDetail = url[url.length - 1];
+		 fetch("https://mobiebook.online/#/ealbum/validate/"+idDetail+"/"+idDetail /*, options */)
+		.then((response) => response.text())
+		.then((html) => {
+			document.getElementById("content").innerHTML = html;
+		})
+		.catch((error) => {
+			console.warn(error);
+		});
+	}   
+   }
+
+   load_home();
+    </script>
+  </body>
+</html>

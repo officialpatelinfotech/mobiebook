@@ -1,0 +1,30 @@
+<div *ngIf="isview == true" class="modal" tabindex="-1" role="dialog" style="display:block!important">  
+    <div class="modal-dialog custom-alert" role="document">  
+        <div class="modal-content">  
+  
+            <div  class="modal-body">  
+                <div class="row">  
+                    <div class="col-md-12">  
+                       <p>Title :  {{couponDetail.CouponTitle}} </p>
+                       <p>Type :  {{couponDetail.CouponTypeName}} </p>
+                       <p>Quanity: {{couponDetail.Quantity}}</p>
+                       <p>Price: {{couponDetail.CurrencySymbol}} {{getpricetofix(couponDetail.CouponPrice)}}</p>
+                    </div>  
+                </div>  
+                <div class="row">  
+                    <div class="col-md-12">  
+                        <p class="confirm-button">  
+                            <a (click)="cancel()">  
+                                <button class="btn btn-danger">Cancel</button>  
+                            </a>  
+                            <a class="mr-2" (click)="buy()">  
+                                <button class="btn btn-success">Buy</button>  
+                            </a>  
+                            
+                        </p>  
+                    </div>  
+                </div>  
+            </div>  
+        </div>  
+    </div>  
+</div>  

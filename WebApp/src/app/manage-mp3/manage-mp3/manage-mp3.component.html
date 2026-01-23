@@ -1,0 +1,130 @@
+<confirmation-popup></confirmation-popup>
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">Manage Mp3</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
+                <li class="breadcrumb-item active">Mp3</li>
+            </ol>
+            <button type="button" (click)="addmp3()" class="btn waves-effect waves-light btn-danger m-l-15"><i
+                    class="fa fa-plus-circle"></i> Upload Mp3
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <div class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer p-0">
+                        <div class="row" style="margin-right: 0px;margin-left: 0px;">
+                            <div class="col-sm-12 col-md-6">
+                                <div class="dataTables_length">
+                                    <!-- <label style="padding-left:5px;">Show
+                                        <select class="form-control form-control-sm">
+                                            <option value="10">10</option>
+                                            <option value="25">25</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
+                                        </select>
+                                        entries
+                                    </label> -->
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-6">
+                                <div class="dataTables_filter">
+                                    <label>Search:
+                                        <input (ngModelChange)="searchChange($event)" [(ngModel)]="pagination.FilterString"  type="search" class="form-control form-control-sm" placeholder="">
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body" style="padding: 0px;padding-bottom: 20px;">
+                <div class="table-responsive">
+                    <div class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer p-0">
+                        <table class="jsgrid-table table table-striped table-hover" style="border-bottom: 1px solid #dee2e6;">
+                            <thead>
+                                <tr role="row">
+                                    <th style="width: 20%;">Title</th>
+                                    <th style="width: 60%;text-align: center;">Audio Player</th>
+                                    <!-- <th style="width: 20%;" class="text-center">Duration</th> -->
+                                    <th style="width: 20%;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let cou of mp3List| paginate: { itemsPerPage: pagination.PageSize, currentPage: pagination.PageIndex,totalItems:totalRecord }">
+                                    <td>
+                                        <div class="d-flex no-block">
+                                            <div class="text-ellipsis">
+                                                <span>{{cou.Title}}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <audio controls>
+                                            <source [src]="serverLink + cou.Link" type="audio/mpeg">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    </td>
+                                    <!-- <td class="text-center">
+                                        03:47
+                                    </td> -->
+                                    <td class="text-right">
+                                        <!-- <button type="button" class="btn btn-facebook waves-effect waves-light"
+                                            (click)="favconfirmation(cou.Mp3Id)" *ngIf="cou.IsActive == true">
+                                            <span class="fa fa-star checked"></span>
+                                        </button>
+                                        <button type="button" class="btn btn-facebook waves-effect waves-light" *ngIf="cou.IsActive != true"
+                                            (click)="favconfirmation(cou.Mp3Id)">
+                                            <span class="fa fa-star unchecked"></span>
+                                        </button>  *ngIf="cou.IsActive != true && cou.IsDefault != true"-->
+                                        <!-- <button type="button" class="btn btn-facebook waves-effect waves-light"
+                                            (click)="defaultconfirmation(cou.Mp3Id)">
+                                            <i class="icon-note"></i>
+                                        </button> -->
+                                        <button type="button" class="btn btn-facebook waves-effect waves-light"
+                                            (click)="delconfirmation(cou.Mp3Id)">
+                                            <i class="text-danger fa fa-trash"></i>
+                                        </button>
+
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                        <div class="row" style="margin-right: 0px;  margin-left: 0px;">
+                            <div class="col-sm-12 col-md-5">
+                                <div class="dataTables_info">
+                                  
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-7">
+                                <div class="dataTables_paginate paging_simple_numbers">
+                                    <pagination-controls (pageChange)="onChangePage($event)"                                  
+                                    ></pagination-controls>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

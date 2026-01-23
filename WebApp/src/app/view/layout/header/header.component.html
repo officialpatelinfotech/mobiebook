@@ -1,0 +1,145 @@
+<header class="topbar">
+  <nav class="navbar top-navbar navbar-expand-md navbar-dark">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="index.html" >
+        <img src="../../../../assets/img/FinalLogo.png" *ngIf="logoChanges==false" alt="homepage" class="light-logo" />
+        <img src="../../../../assets/img/logo2.png" style="width: 50px;" *ngIf="logoChanges==true"  alt="homepage" class="light-logo">
+        <!--End Logo icon -->
+      </a>
+    </div>
+    <!-- ============================================================== -->
+    <!-- End Logo -->
+    <!-- ============================================================== -->
+    <div class="navbar-collapse">
+      <!-- ============================================================== -->
+      <!-- toggle and nav items -->
+      <!-- ============================================================== -->
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="nav-link nav-toggler d-block d-md-none waves-effect waves-dark" 
+            (click)="toogleMenuResponsive($event)">
+            <i class="ti-menu openMobile"></i>
+            <i class="ti-close closeMobile"></i>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link sidebartoggler d-none d-lg-block d-md-block waves-effect waves-dark"
+            (click)="toogleMenu($event)">
+            <i class="fa fa-bars"></i>
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav my-lg-0">
+        <li class="nav-item dropdown u-pro show">
+          <!-- <a class="nav-link dropdown-toggle " (click)="noticationAction()" data-toggle="dropdown" aria-haspopup="true"
+            aria-expanded="false"> <i class="fa fa-bell"></i>
+            <span class="badge badge-danger ml-auto notificationheader">3</span>
+          </a> -->
+          <!-- <div class="dropdown-menu dropdown-menu-right mailbox show" style="padding: 0;" *ngIf="notificationMenu ==true">
+            <ul style="padding: 0;">
+              <li>
+                <div class="drop-title">Notifications</div>
+              </li>
+              <li>
+                <div class="message-center">
+                  
+                  <a>
+                    <div class="btn btn-danger btn-circle"><i class="fa fa-link"></i></div>
+                    <div class="mail-contnet">
+                      <h5>Luanch Admin</h5> <span class="mail-desc">Just see the my new admin!</span> <span
+                        class="time">9:30 AM</span>
+                    </div>
+                  </a>
+                  
+                  <a >
+                    <div class="btn btn-success btn-circle"><i class="ti-calendar"></i></div>
+                    <div class="mail-contnet">
+                      <h5>Event today</h5> <span class="mail-desc">Just a reminder that you have event</span> <span
+                        class="time">9:10 AM</span>
+                    </div>
+                  </a>
+                 
+                  <a >
+                    <div class="btn btn-info btn-circle"><i class="ti-settings"></i></div>
+                    <div class="mail-contnet">
+                      <h5>Settings</h5> <span class="mail-desc">You can customize this template as you want</span> <span
+                        class="time">9:08 AM</span>
+                    </div>
+                  </a>
+                 
+                  <a>
+                    <div class="btn btn-primary btn-circle"><i class="ti-user"></i></div>
+                    <div class="mail-contnet">
+                      <h5>Pavan kumar</h5> <span class="mail-desc">Just see the my admin!</span> <span class="time">9:02
+                        AM</span>
+                    </div>
+                  </a>
+                </div>
+              </li>
+              <li>
+                <a class="nav-link text-center checkallNotification"
+                  style="color: #c90000!important; padding: 10px 0 !important;"> <strong>Check all
+                    notifications</strong> <i class="fa fa-angle-right" style="padding-left: 10px;"></i> </a>
+              </li>
+            </ul>
+          </div> -->
+        </li>
+        <li class="nav-item dropdown u-pro show">
+          <!-- <a class="nav-link dropdown-toggle waves-dark profile-pic" (click)="productCount()" data-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">
+            <i class="icon-basket"></i>
+            <span class="badge badge-danger ml-auto notificationheader">{{cartDetail.length}}</span>
+          </a> -->
+          <!-- <div class="dropdown-menu dropdown-menu-right mailbox show" style="padding: 0;" *ngIf="productCountMenu ==true">
+            <ul style="padding: 0;">
+              <li>
+                <div class="drop-title">Product</div>
+              </li>
+              <li>
+                <div class="message-center">
+                  <a  *ngFor="let c of cartDetail">
+                    <div class="btn btn-danger btn-circle"><i class="icon-tag"></i></div>
+                    <div class="mail-contnet">
+                      <h5>{{c.CouponTitle}}({{c.CouponQuantity}})</h5>
+                      <span class="mail-desc">{{c.CurrencySymbol}}{{c.TotalPrice.toFixed(2)}} ({{c.RequestQuantity}})</span> 
+                    </div>
+                    <div class="tegIconSET">
+                        <i class="icon-trash"></i>
+                    </div>
+                  </a>
+                </div>
+              </li>
+              <li>
+                <a class="nav-link text-center checkallNotification" (click)="loadCartDetail()"
+                  style="color: #c90000!important; padding: 10px 0 !important;"> <i class="icon-basket"></i><strong>
+                    Check Out</strong> </a>
+              </li>
+            </ul>
+
+           
+          </div> -->
+        </li>
+        <li class="nav-item dropdown u-pro show">
+          <a class="nav-link dropdown-toggle waves-effect waves-dark profile-pic" (click)="profileMenuAction()" data-toggle="dropdown"
+            aria-haspopup="true" aria-expanded="false">
+            <!-- <img src="../../../../assets/img/user.jpg" alt="user" class=""> -->
+            <span class="hidden-md-down">{{userDetails?.FullName}} &nbsp;<i class="fa fa-angle-down"></i></span> </a>
+          <div class="dropdown-menu dropdown-menu- show" *ngIf="profileMenu ==true">
+            <!-- text-->
+            <a  class="dropdown-item" (click)="goToProfile()"><i class="ti-user"></i> My
+              Profile</a>
+            <!-- text-->
+            <!-- text-->
+            <div class="dropdown-divider"></div>
+            <!-- text-->
+            <a (click)="logout()" class="dropdown-item"><i class="fa fa-power-off"></i> Logout</a>
+            <!-- text-->
+          </div>
+        </li>
+        <!-- ============================================================== -->
+        <!-- End User Profile -->
+        <!-- ============================================================== -->
+      </ul>
+    </div>
+  </nav>
+</header>

@@ -1,0 +1,103 @@
+<div class="row page-titles">
+    <div class="col-md-5 align-self-center">
+        <h4 class="text-themecolor">Dashboard</h4>
+    </div>
+    <div class="col-md-7 align-self-center text-right">
+        <div class="d-flex justify-content-end align-items-center">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="javascript:void(0)">Home</a></li>
+                <li class="breadcrumb-item active">Dashboard </li>
+            </ol>
+            <!-- <button type="button" class="btn btn-info d-none d-lg-block m-l-15"><i class="fa fa-plus-circle"></i> Create New</button> -->
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-lg-3" *ngFor="let d of dashboard">
+        <div class="card">
+            <!-- <div class="card-body" (click)="viewDetail(d)" style="cursor: pointer;"> -->
+            <div class="card-body">
+                <h5 class="card-title text-uppercase">{{d.Title}}</h5>
+                <div class="text-right"> 
+                    <h2><sup><i class="ti-arrow-up text-success"></i></sup> {{d.Counter}}</h2>
+                </div>
+                <!-- <span class="text-success">10%</span>
+                <div class="progress">
+                    <div class="progress-bar bg-success" style="width: 20%; height:6px;" role="progressbar"> <span class="sr-only">60% Complete</span> </div>
+                </div> -->
+            </div>
+        </div>
+    </div>
+    <!-- <div class="col-lg-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-uppercase">Credit Coupons Purchase </h5>
+                <div class="text-right"> 
+                    <h2><sup><i class="ti-arrow-down text-primary"></i></sup> 2500</h2>
+                </div>
+                <span class="text-primary">30%</span>
+                <div class="progress">
+                    <div class="progress-bar bg-primary" style="width: 30%; height:6px;" role="progressbar"> <span class="sr-only">60% Complete</span> </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3" *ngIf="isAdmin == true">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-uppercase">Registered LABS </h5>
+                <div class="text-right"> 
+                    <h2><sup><i class="ti-arrow-up text-info"></i></sup> 150</h2>
+                </div>
+                <span class="text-info">60%</span>
+                <div class="progress">
+                    <div class="progress-bar bg-info" style="width: 40%; height:6px;" role="progressbar"> <span class="sr-only">60% Complete</span> </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3" *ngIf="isAdmin == true">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-uppercase">Registered  Photographer</h5>
+                <div class="text-right"> 
+                    <h2><sup><i class="ti-arrow-up text-inverse"></i></sup> 80</h2>
+                </div>
+                <span class="text-inverse">80%</span>
+                <div class="progress">
+                    <div class="progress-bar bg-inverse" style="width: 40%; height:6px;" role="progressbar"> <span class="sr-only">60% Complete</span> </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-uppercase">Total Viewers </h5>
+                <div class="text-right"> 
+                    <h2><sup><i class="ti-arrow-up text-inverse"></i></sup> 40</h2>
+                </div>
+                <span class="text-inverse">80%</span>
+                <div class="progress">
+                    <div class="progress-bar bg-inverse" style="width: 40%; height:6px;" role="progressbar"> <span class="sr-only">60% Complete</span> </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title text-uppercase">Total Viewers  eAlbumwise</h5>
+                <div class="text-right"> 
+                    <h2><sup><i class="ti-arrow-up text-inverse"></i></sup> 35</h2>
+                </div>
+                <span class="text-inverse">80%</span>
+                <div class="progress">
+                    <div class="progress-bar bg-inverse" style="width: 40%; height:6px;" role="progressbar"> <span class="sr-only">60% Complete</span> </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+</div>

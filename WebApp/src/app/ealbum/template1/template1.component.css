@@ -1,0 +1,111 @@
+#business {
+    background: url(../../../assets/img/top_bg.jpg) no-repeat center center;
+  }
+  section {
+    padding: 80px 0;
+}
+.overlay {
+  position: absolute;
+  background: transparent linear-gradient(295deg, #eb0000 0%, #b26968 35%, #808080 80%) 0% 0% no-repeat padding-box;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  opacity: 0.85;
+}
+
+.sliderInnerSection{
+  width: 600px;
+  text-align: center;
+  margin: 140px auto;
+  padding: 40px;
+  background: #fff;
+  border-radius:4px;
+}
+
+.swiper-container {
+  width: 100%;
+  height: 100%;
+
+}
+
+.swiper-slide {
+  text-align: center;
+  font-size: 18px;
+  background: #fff;
+  /* Center slide text vertically */
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  -webkit-justify-content: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  -webkit-align-items: center;
+  align-items: center;
+}
+
+.sliderOneAnimationSet{
+  text-align: center;
+}
+.sliderOneAnimationSet img{
+  width: 140px;
+}
+.sliderOneAnimationSet h4{
+  font-size: 27px;
+    font-weight: 300 !important;
+    margin: 55px 0px !important;
+}
+.sliderOneAnimationSet h3{
+  font-size: 42px !important;
+  margin: 55px 0px !important;
+  font-weight: 500 !important;
+  color: #c90000;
+}
+.slidertwoAnimationSet{
+  display: flex;
+}
+
+.leftTextArea{
+  width: 5%;
+  padding-right: 56px;
+}
+.leftTextArea h1{
+  font-size: 22px;
+  font-weight: 400 !important;
+  text-align: center;
+  display: inline-block;
+}
+.middleTextArea{
+  width: 50%;
+}
+.middleWarepostion{
+  position: absolute;
+  top: 50%;
+  transform: translate(0%, -50%);
+}
+.middleWarepostion h4{
+  font-size: 20px;
+  font-weight: 500 !important;
+  padding-bottom: 25px;
+}
+.middleWarepostion h3{
+  font-size: 52px !important;
+    font-weight: 500 !important;
+    color: #c90000;
+}
+.rightTextArea{
+  width: 45%;
+}
+.animate__delay-7s{
+  display: inline-block;
+  animation-duration: 5s; /* don't forget to set a duration! */
+  --animate-delay: 0.5s;
+}
+.animate__delay-8s{
+  --animate-delay: 0.5s;
+  animation-duration: 5s; /* don't forget to set a duration! */
+}

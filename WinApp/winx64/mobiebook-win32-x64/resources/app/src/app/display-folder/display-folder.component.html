@@ -1,0 +1,150 @@
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <div class="dataTables_wrapper container-fluid dt-bootstrap4 no-footer p-0">
+                        <div class="row" style="margin-right: 0px;margin-left: 0px;">
+                            <div class="col-sm-12">
+                                <div class="row">
+                                    <div class="col-sm-5 col-md-5">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="input-group mb-3">
+                                                    <span style="padding-top: 6px; padding-right: 6px;">Select Folder :
+                                                    </span>
+                                                    <input type="text" class="form-control"
+                                                        [(ngModel)]="selectedDirectory" placeholder="Browse Directive"
+                                                        aria-label="Browse Directive" aria-describedby="basic-addon2">
+                                                    <div class="input-group-append">
+                                                        <button class="btn btn-outline-secondary Mred-submit-btns"
+                                                            (click)="browse()" type="button">Browse</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-7 col-md-7 text-right">
+                                        <div class="row">
+                                            <div class="col-2 text-left pt-2">
+
+                                            </div>
+                                            <div class="col-10">
+                                                <button type="submit" class="Mred-submit-btns"
+                                                    (click)="ProcessAllImage()" [disabled]="isAllProcess == true">
+                                                    Process All</button>
+                                                <button type="submit" style="margin-left:5px" class="btn btn-danger"
+                                                    (click)="cancelProcess()">
+                                                    Cancel</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-8 text-left pt-2 pb-2">
+                                        <span style="padding-right: 5px;">Choose Audio:</span>
+                                        <select style="width: 200px;" [(ngModel)]="selected"
+                                            (change)='onOptionsSelected($event)'>
+                                            <option *ngFor="let audio of albums" [value]="audio.AudioId">
+                                                {{trimStr(audio.Title)}}
+                                            </option>
+                                        </select>
+                                        <span style="padding-right: 5px; padding-left: 5px;">Upload New Audio :</span>
+                                        <span style="padding-right: 5px;">
+                                            <input type="file" #mp3File (change)="attachAudioFile($event)" />
+                                        </span>
+
+                                    </div>
+                                    <div class="col-4 text-right pt-2 pb-2">
+                                        <!-- Open Folder Button Removed -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row" *ngIf="folderDetail.length > 0">
+                            <div class="col-sm-12">
+                                <div class="row">
+                                    <div class="col-sm-9">
+
+                                    </div>
+                                    <div class="col-sm-3">
+                                        <div class="form-group">
+                                            <select class="form-control" (change)="SearchByStatus($event)">
+                                                <option *ngFor="let st of statusList" value={{st.Id}}>{{st.Text}}
+                                                </option>
+                                            </select>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <table class="table table-hover nowrap table-bordered">
+                            <thead>
+                                <tr role="row">
+                                    <th>File Name
+                                    </th>
+                                    <th>Page Type
+                                    </th>
+                                    <th class="text-center">Email Id
+                                    </th>
+                                    <th class="text-center">Image Count
+                                    </th>
+                                    <th class="text-center">Status </th>
+                                    <th class="text-center">Action </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let f of allfolderDetail"
+                                    [ngClass]="{'table-info': f.Status === 'In Progress'}">
+                                    <td>
+                                        <span title="{{f.FolderName}}"> {{trimStr(f.FolderName)}}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <select>
+                                            <option value="Spread">Spread</option>
+                                            <option value="Page">Page</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <span title="{{f.EmailAddress}}">{{trimStr(f.EmailAddress)}}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {{f.Counter}}
+                                    </td>
+                                    <td class="text-center">
+                                        <span *ngIf="f.Status === 'Done'" style="color: green;"> SUCCESS</span>
+                                        <span *ngIf="f.Status === 'Invalid'" style="color: red;">
+                                            <span style="cursor: pointer;" title="{{f.ErrorDetail}}">FAILED</span>
+                                        </span>
+                                        <span *ngIf="f.Status !== 'Done'  && f.Status !== 'Invalid'"
+                                            style="color: gray;"> {{f.Status}}</span>
+                                        <span *ngIf="f.Status === 'Invalid'">
+                                            <i class="icon-spaces ti-info" (click)="viewMessage(f.ErrorDetail)"></i>
+                                        </span>
+
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <button [disabled]="isAllProcess == true" *ngIf="f.Status == 'Open'"
+                                                type="submit" class="Mred-submit-btns" (click)="saveEalbumInfo(f)">
+                                                Process</button>
+                                            <span *ngIf="f.Status === 'Invalid'">
+                                                <i class="icon-spaces ti-reload" (click)="reload(f)"></i>
+                                            </span>
+                                        </div>
+
+                                    </td>
+                                </tr>
+
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

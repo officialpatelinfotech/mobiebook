@@ -1,0 +1,61 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-6 col-md-8 col-xs-8 ">
+            <div class="imagssec">
+               <a [routerLink]="['/home']"> <img src="../../../../assets/img/logo-login.png"></a>
+            </div>
+        </div>
+        <div class="col-sm-6  col-md-4 col-xs-4">
+            <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" (click)="showhelp()">
+                    Help
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" [ngClass]="{'showDropDown': showHelp == true}">
+                    <ul class="ulactionset">
+                        <li>
+                            <a>
+                                <div class="iconwidthText">
+                                    <div class="icontexs">
+                                        <i class="fa fa-question-circle" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="icontexs-text">
+                                        <h1>Videos</h1>
+                                        <!-- <p>Lorem Ipsum is simply dummy text </p> -->
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        <li>
+                            <a>
+                                <div class="iconwidthText">
+                                    <div class="icontexs">
+                                        <i class="fa fa-comment" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="icontexs-text">
+                                        <h1>Live Chat</h1>
+                                        <!-- <p>Visit help centers</p> -->
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+
+                        <li>
+                            <a>
+                                <div class="iconwidthText">
+                                    <div class="icontexs">
+                                        <i class="fa fa-phone" aria-hidden="true"></i>
+                                    </div>
+                                    <div class="icontexs-text">
+                                        <h1>Contact Us</h1>
+                                        <!-- <p>Visit help centers</p> -->
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
