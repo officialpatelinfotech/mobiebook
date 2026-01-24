@@ -462,6 +462,8 @@ export class DisplayFolderComponent implements OnInit {
 
     // 2. Buckets for special pages
     let front: any[] = [];
+    let blanks: any[] = [];
+    let emboss: any[] = [];
     let frontTP: any[] = [];
     let pages: any[] = [];
     let backTP: any[] = [];
@@ -478,6 +480,8 @@ export class DisplayFolderComponent implements OnInit {
       if (img) {
         let pType = this.pageType(name);
         if (pType === 'FRONT') front.push(img);
+        else if (pType === 'BLANK') blanks.push(img);
+        else if (pType === 'EMBOSS') emboss.push(img);
         else if (pType === 'TPFRONT') frontTP.push(img);
         else if (pType === 'TPBACK') backTP.push(img);
         else if (pType === 'BACK') back.push(img);
@@ -486,8 +490,18 @@ export class DisplayFolderComponent implements OnInit {
     });
 
     // 5. Concatenate in correct order
-    // Order: Front Cover -> Front TP -> Standard Pages -> Back TP -> Back Cover
-    let finalOrder = [...front, ...frontTP, ...pages, ...backTP, ...back];
+    // Order: Front Cover -> Blank -> Front TP -> Blank -> Emboss -> Standard Pages -> Back TP -> Back Cover
+    let finalOrder = [
+      ...front,
+      ...blanks.slice(0, 1),
+      ...frontTP,
+      ...blanks.slice(1, 2),
+      ...emboss,
+      ...blanks.slice(2),
+      ...pages,
+      ...backTP,
+      ...back
+    ];
 
     // 6. Assign SequenceNo
     finalOrder.forEach((img: any, index: number) => {
@@ -545,8 +559,12 @@ export class DisplayFolderComponent implements OnInit {
     }
 
     // ---- EMBOSS ----
-    if (file === 'e1') {
+    if (file === 'e1' || file === 'emboss') {
       return 'EMBOSS';
+    }
+    // ---- BLANK ----
+    if (['b1', 'b2', 'blank', 'blank page', 'blankpage', 'blank-page', 'blank_page', 'black', 'black page'].includes(file)) {
+      return 'BLANK';
     }
 
     return 'PAGE';
