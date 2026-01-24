@@ -297,12 +297,12 @@ namespace PhotoMateAPI.Controllers
 
                 if(pageType == "Spread")
                 {
-                    if (viewPageType == "TPFRONT" || viewPageType == "TPBACK")
+                    if (viewPageType == "TPFRONT" || viewPageType == "TPBACK" || viewPageType == "EMBOSS")
                     {
                         var img = new List<string>();
                         var fixedImgPath = Path.Combine("Resources", "FixedImages");
                         var heightTook = 0;
-                        if (viewPageType == "TPFRONT")
+                        if (viewPageType == "TPFRONT" || viewPageType == "EMBOSS")
                         {
                             img.Add(Path.Combine(fixedImgPath, "blankImg.png"));
                             img.Add(fullPath);
@@ -446,12 +446,12 @@ namespace PhotoMateAPI.Controllers
                 //}
                 if (pageType == "Spread")
                 {
-                    if (viewPageType == "TPFRONT" || viewPageType == "TPBACK")
+                    if (viewPageType == "TPFRONT" || viewPageType == "TPBACK" || viewPageType == "EMBOSS")
                     {
                         var img = new List<string>();
                         var fixedImgPath = Path.Combine("Resources", "FixedImages");
                         var heightTook = 0;
-                        if (viewPageType == "TPFRONT")
+                        if (viewPageType == "TPFRONT" || viewPageType == "EMBOSS")
                         {
                             img.Add(Path.Combine(fixedImgPath, "blankImg.png"));
                             img.Add(fullPath);
