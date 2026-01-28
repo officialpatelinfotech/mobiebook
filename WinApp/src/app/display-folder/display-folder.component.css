@@ -9,10 +9,6 @@
     transition: transform 0.3s ease;
 }
 
-.card:hover {
-    transform: translateY(-5px);
-}
-
 .card-body {
     padding: 2rem;
 }
@@ -39,7 +35,7 @@
 }
 
 .input-group-append .btn {
-    border-radius: 10px !important;
+    border-radius: 5px !important;
     padding: 8px 20px;
     margin: 2px;
 }
@@ -78,8 +74,9 @@
     font-weight: 600;
     padding: 10px 25px;
     border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
     transition: all 0.3s ease;
+    letter-spacing:0.5px;
 }
 
 .btn-danger:hover {

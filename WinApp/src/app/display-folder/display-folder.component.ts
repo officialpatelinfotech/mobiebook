@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild, OnDestroy, NgZone } from '@angular/core';
 import { ElectronService } from 'ngx-electron';
 import { ImagesService } from '../images.service';
 import { FileTree } from '../model/filetree.metadata';
@@ -30,9 +30,10 @@ declare var alphaNumericSort: Function;
   templateUrl: './display-folder.component.html',
   styleUrls: ['./display-folder.component.css']
 })
-export class DisplayFolderComponent implements OnInit {
+export class DisplayFolderComponent implements OnInit, OnDestroy {
   images: string[] = [];
   directory: any[] = [];
+  currentWatcher: any;
 
   selectedDirectory: any;
   isDirectiveLoad: boolean = false;
@@ -56,7 +57,8 @@ export class DisplayFolderComponent implements OnInit {
     private imageService: ImagesService,
     private cdr: ChangeDetectorRef,
     private ealbumService: EalbumService,
-    private excelExport: ExcelExportService
+    private excelExport: ExcelExportService,
+    private ngZone: NgZone
   ) {
 
     this.statusList.push({ Id: 'ALL', Text: 'All' });
@@ -68,8 +70,12 @@ export class DisplayFolderComponent implements OnInit {
 
   ngOnInit(): void {
     this.getAudioDetail();
+  }
 
-
+  ngOnDestroy() {
+    if (this.currentWatcher) {
+      this.currentWatcher.close();
+    }
   }
 
 
@@ -108,6 +114,101 @@ export class DisplayFolderComponent implements OnInit {
   }
 
   folder: string | undefined;
+
+  startWatching(path: any) {
+    if (this.currentWatcher) {
+      this.currentWatcher.close();
+      this.currentWatcher = undefined;
+    }
+
+    try {
+      this.currentWatcher = electronFs.watch(path, { persistent: true, recursive: true }, (eventType: any, filename: any) => {
+        this.ngZone.run(() => {
+          this.checkForNewFolders(path);
+        });
+      });
+    } catch (error) {
+    }
+  }
+
+  checkForNewFolders(path: any) {
+    let files = FileTree.readDir(path);
+    let currentFolderNames = this.folderDetail.map(x => x.FolderName);
+    let hasChanges = false;
+    files.forEach((row: any) => {
+      if (row.isdirective) {
+        if (!currentFolderNames.includes(row.name)) {
+          this.processSingleFolder(row);
+          hasChanges = true;
+        } else {
+          // Update existing folder content
+          let existingFolder = this.folderDetail.find(x => x.FolderName == row.name);
+          if (existingFolder) {
+            let newCount = this.fileCount(row);
+            // Check if count or content changed to avoid unnecessary updates if possible, 
+            // but for now just updating is safer to ensure state is fresh.
+            if (existingFolder.FolderImages && (existingFolder.Counter !== newCount || existingFolder.FolderImages.length !== row.items.length)) {
+              existingFolder.FolderImages = row.items;
+              existingFolder.Counter = newCount;
+
+              // If it was invalid due to missing text file, re-check (optional but good)
+              if (existingFolder.Status === "Invalid" && existingFolder.ErrorDetail === "Order file not found") {
+                let orderFile = this.getTxtFilePath(row.items);
+                if (orderFile != "") {
+                  existingFolder.FolderTextFile = orderFile;
+                  existingFolder.Status = "Open";
+                  existingFolder.ErrorDetail = "";
+                  this.readText(existingFolder.FolderTextFile, row.name);
+                }
+              }
+              hasChanges = true;
+            }
+          }
+        }
+      }
+    });
+
+    if (hasChanges) {
+      let allFolder = JSON.stringify(this.folderDetail);
+      this.allfolderDetail = JSON.parse(allFolder);
+      this.cdr.detectChanges();
+    }
+  }
+
+  processSingleFolder(x: any) {
+    if (x.isdirective == false)
+      return;
+
+    let row = x;
+    let orderFile = this.getTxtFilePath(row.items);
+    let fold = new FolderDetailMetaData();
+    fold.FolderName = row.name;
+    fold.PageType = "Spread";
+    fold.FolderTextFile = orderFile;
+    fold.IsProcess = false;
+    fold.EAlbumId = 0;
+    fold.FolderPath = row.path;
+    if (orderFile == "") {
+      fold.Counter = 0;
+      fold.FolderImages = row.items;
+      fold.Status = "Invalid"
+      fold.ErrorDetail = "Order file not found";
+      this.folderDetail.push(fold);
+    } else {
+      fold.Counter = this.fileCount(row);
+      fold.FolderImages = row.items;
+      fold.Status = "Open"
+      this.folderDetail.push(fold);
+
+      this.readText(fold.FolderTextFile, row.name);
+      let itemDetail = this.logDetail(row.items)
+      this.readLogText(row.path, itemDetail, row.name)
+    }
+
+    let allFolder = JSON.stringify(this.folderDetail);
+    this.allfolderDetail = JSON.parse(allFolder);
+  }
+
   browse() {
     var directory = dialog.showOpenDialog({ properties: ['openDirectory'] })
       .then((x: any) => {
@@ -136,41 +237,10 @@ export class DisplayFolderComponent implements OnInit {
         this.folderDetail = [];
 
         folderDetail.forEach(x => {
+          this.processSingleFolder(x);
+        });
 
-          if (x.isdirective == false)
-            return;
-
-          let row = x;
-          let orderFile = this.getTxtFilePath(row.items);
-          let fold = new FolderDetailMetaData();
-          fold.FolderName = row.name;
-          fold.PageType = "Spread";
-          fold.FolderTextFile = orderFile;
-          fold.IsProcess = false;
-          fold.EAlbumId = 0;
-          fold.FolderPath = row.path;
-          if (orderFile == "") {
-            fold.Counter = 0;
-            fold.FolderImages = row.items;
-            fold.Status = "Invalid"
-            fold.ErrorDetail = "Order file not found";
-            this.folderDetail.push(fold);
-          } else {
-            fold.Counter = this.fileCount(row);
-            fold.FolderImages = row.items;
-            fold.Status = "Open"
-            this.folderDetail.push(fold);
-
-            this.readText(fold.FolderTextFile, row.name);
-            let itemDetail = this.logDetail(row.items)
-            this.readLogText(row.path, itemDetail, row.name)
-            //this.log(row.path, JSON.stringify(itemDetail));
-          }
-        })
-
-        let allFolder = JSON.stringify(this.folderDetail);
-        this.allfolderDetail = JSON.parse(allFolder);
-        //this.allfolderDetail = this.allfolderDetail.filter(x => x.is)
+        this.startWatching(this.selectedDirectory);
       });
   }
 
@@ -407,20 +477,7 @@ export class DisplayFolderComponent implements OnInit {
               this.excelDetail(albumDetail, detail);
             }
             this.updateImageStatus(detail, "DONE");
-            try {
-              if (typeof $ !== 'undefined' && $.toast) {
-                $.toast({
-                  heading: 'Success',
-                  text: detail.FolderName + ' processed successfully.',
-                  icon: 'success',
-                  position: 'top-right',
-                  stack: false
-                });
-              } else {
-                this.viewMessage(detail.FolderName + ' processed successfully.');
-              }
-            } catch (e) {
-            }
+
             if (this.isAllProcess && !this.isCancel) {
               this.isAllProcess = false;
               this.ProcessAllImage();
@@ -495,7 +552,7 @@ export class DisplayFolderComponent implements OnInit {
       ...front,
       ...blanks.slice(0, 1),
       ...frontTP,
-      ...blanks.slice(1, 2),
+      ...blanks.slice(0, 1),
       ...emboss,
       ...blanks.slice(2),
       ...pages,
@@ -529,43 +586,33 @@ export class DisplayFolderComponent implements OnInit {
   pageType(name: string) {
     if (!name) return 'PAGE';
 
-    // Remove extension properly, trim spaces, lowercase
-    // Use substring to handle filenames with multiple dots (e.g. 'my.image.jpg' -> 'my.image')
+    // Remove extension, lowercase and normalize separators so "emboss_01", "emboss-1", "emboss 1" all match
     const lastIndex = name.lastIndexOf('.');
-    let file = name;
-    if (lastIndex > -1) {
-      file = name.substring(0, lastIndex);
-    }
+    let file = lastIndex > -1 ? name.substring(0, lastIndex) : name;
     file = file.toLowerCase().trim();
+    // replace underscores/hyphens with space and collapse multiple spaces
+    const normalized = file.replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim();
 
-    // ---- FRONT COVER ----
-    if (file === 'c1' || file === 'front cover' || file === 'frontcover' || file === 'front-cover' || file === 'front_cover') {
-      return 'FRONT';
-    }
+    // FRONT COVER
+    if (/^(c1|front( |$)|front cover|frontcover)$/.test(normalized)) return 'FRONT';
 
-    // ---- BACK COVER ----
-    if (file === 'c2' || file === 'back cover' || file === 'backcover' || file === 'back-cover' || file === 'back_cover') {
-      return 'BACK';
-    }
+    // BACK COVER
+    if (/^(c2|back( |$)|back cover|backcover)$/.test(normalized)) return 'BACK';
 
-    // ---- FRONT TP ----
-    if (file === 'f1' || file === 'front tp' || file === 'fronttp' || file === 'front-tp' || file === 'front_tp') {
-      return 'TPFRONT';
-    }
+    // FRONT TP
+    if (/^(f1|front( |)tp|first page|front tp)$/.test(normalized)) return 'TPFRONT';
 
-    // ---- BACK TP ----
-    if (file === 'f2' || file === 'back tp' || file === 'backtp' || file === 'back-tp' || file === 'back_tp') {
-      return 'TPBACK';
-    }
+    // BACK TP
+    if (/^(f2|back( |)tp|last page|back tp)$/.test(normalized)) return 'TPBACK';
 
-    // ---- EMBOSS ----
-    if (file === 'e1' || file === 'emboss') {
+    // EMBOSS - match e1, e-1, emb, emboss, embose and variants with/without separators and optional digits
+    // Examples matched: e1, e-1, emb, emboss, embose, emboss1, emboss01, emb01, emboss 1
+    if (/^e-?1$/.test(normalized) || /^emb(?:oss|ose)?(?:\s*\d*)?$/.test(normalized) || normalized === 'emb') {
       return 'EMBOSS';
     }
-    // ---- BLANK ----
-    if (['b1', 'b2', 'blank', 'blank page', 'blankpage', 'blank-page', 'blank_page', 'black', 'black page'].includes(file)) {
-      return 'BLANK';
-    }
+
+    // BLANK
+    if (/^b\d*$/.test(normalized) || /^blank( |$)/.test(normalized) || normalized === 'black') return 'BLANK';
 
     return 'PAGE';
   }
@@ -919,6 +966,8 @@ export class DisplayFolderComponent implements OnInit {
     //alert('Under development');
     let path = detail.FolderPath;
     var fileTree = FileTree.readDir(path);
+    console.log("Filetree: ", fileTree);
+
     let rowDetail = this.folderDetail.find(x => x.FolderName == detail.FolderName);
     if (rowDetail != undefined) {
       let orderFile = this.getTxtFilePath(fileTree);
@@ -959,12 +1008,10 @@ export class DisplayFolderComponent implements OnInit {
   }
 
   cancelProcess() {
-    if (this.isAllProcess == true) {
-      if (confirm("Are you sure you want to cancel?")) {
-        this.isCancel = true;
-      } else {
+    if (confirm("Are you sure you want to cancel?")) {
+      this.isCancel = true;
+    } else {
 
-      }
     }
   }
 
