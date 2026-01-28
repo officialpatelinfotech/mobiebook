@@ -526,23 +526,25 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     let backTP: any[] = [];
     let back: any[] = [];
 
-    // 3. Map for lookup
-    let imageMap = new Map();
-    images.forEach((img: any) => imageMap.set(img.name, img));
-
-    // 4. Distribute based on pageType
-    // Iterating through sorted imgName ensures 'pages' bucket ends up sorted
+    // 3. Distribute based on pageType
+    // Handle duplicate filenames by picking the next unused image instance for each sorted name
+    const usedIndices: boolean[] = new Array(images.length).fill(false);
     imgName.forEach((name: any) => {
-      let img = imageMap.get(name);
-      if (img) {
-        let pType = this.pageType(name);
-        if (pType === 'FRONT') front.push(img);
-        else if (pType === 'BLANK') blanks.push(img);
-        else if (pType === 'EMBOSS') emboss.push(img);
-        else if (pType === 'TPFRONT') frontTP.push(img);
-        else if (pType === 'TPBACK') backTP.push(img);
-        else if (pType === 'BACK') back.push(img);
-        else pages.push(img);
+      // find first unused image with this name
+      for (let i = 0; i < images.length; i++) {
+        if (!usedIndices[i] && images[i].name === name) {
+          usedIndices[i] = true;
+          const img = images[i];
+          const pType = this.pageType(name);
+          if (pType === 'FRONT') front.push(img);
+          else if (pType === 'BLANK') blanks.push(img);
+          else if (pType === 'EMBOSS') emboss.push(img);
+          else if (pType === 'TPFRONT') frontTP.push(img);
+          else if (pType === 'TPBACK') backTP.push(img);
+          else if (pType === 'BACK') back.push(img);
+          else pages.push(img);
+          break;
+        }
       }
     });
 
