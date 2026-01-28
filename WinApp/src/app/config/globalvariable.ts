@@ -1,8 +1,6 @@
-export const GLOBAL_VARIABLE = {        
+export const GLOBAL_VARIABLE = {
     SERVER_LINK: 'https://api.mobiebook.online/',
     LOCAL_LINK: 'https://api.mobiebook.online/',
-    //SERVER_LINK: 'http://localhost:55704/',   
-    //LOCAL_LINK: 'http://localhost:55704/', 
     API_LINK: 'api/',
     IMG_FOLDER: 'UploadImage/',
     SUCCESS: 'success',
@@ -25,15 +23,15 @@ export const GLOBAL_VARIABLE = {
     EMAIL_SUCESS_MSG: 'Please check your email to change the password',
     COUPON_ADDEDD: 'Coupon added successfully',
     PROFILE_ADDEDD: 'Profile update successfully',
-    ERROR_MESSAGE_TYPE : 'Error',
+    ERROR_MESSAGE_TYPE: 'Error',
     WARNING_MSG_TYPE: 'Warning',
     SUCCESS_MSG_TYPE: 'Success',
-    TOKEN:'TOKEN',
+    TOKEN: 'TOKEN',
     CART: 'CART',
     BULK_COUPONTYPE: 'Bulk',
-    EALBUM_PUBLISH_MSG:'eAlbum published successfully',
+    EALBUM_PUBLISH_MSG: 'eAlbum published successfully',
     PUBLISH_CONFIRM_MSG: 'Are you sure you want to publish?',
-    CUSTOMER_TOKEN:'CUSTOMERTOKEN',
+    CUSTOMER_TOKEN: 'CUSTOMERTOKEN',
     NEXT: 'next',
     PREVIOUS: 'previous',
     LOGIN_CREDENTIAL: 'CREDENTIAL',
@@ -46,8 +44,7 @@ export enum AuthType {
     ChangePassword = 'ChangePassword'
 }
 
-export enum BusinessType
-{
+export enum BusinessType {
     Lab = 1,
     PhotoGrapher = 2
 }
@@ -64,12 +61,11 @@ export enum IMG_TYPE {
 }
 
 export const IMAGE_TYPE = [
-    {Id: 'Spread', Text:'Spread'},
-    {Id: 'Page',Text:'Page'}
+    { Id: 'Spread', Text: 'Spread' },
+    { Id: 'Page', Text: 'Page' }
 ]
 
-export enum AlbumStatus
-{
+export enum AlbumStatus {
     OPEN = "OPEN",
     INPROGRESS = "INPROGRESS",
     PUBLISHED = "PUBLISHED"
