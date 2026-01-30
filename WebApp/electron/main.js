@@ -7,10 +7,10 @@ function createWindow() {
         width:1024,
         height:2014,
         backgroundColor:'#ffffff',
-        icon:`file://${__dirname}/dist/photo/assets/icons/icon-128x128.png`
+        icon:`file://${__dirname}/../dist/photo/assets/icons/icon-128x128.png`
     })
 
-    win.loadURL(`file://${__dirname}/dist/photo/index.html`)
+    win.loadURL(`file://${__dirname}/../dist/photo/index.html`)
 
     //win.webContents.openDevTools()
 

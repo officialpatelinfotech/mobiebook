@@ -7,7 +7,6 @@ import { AlbumImage } from 'src/app/models/addalbum.metadata';
 import Compressor from 'compressorjs';
 import { GLOBAL_VARIABLE, IMAGE_TYPE, IMG_TYPE, PageViewType } from 'src/app/config/globalvariable';
 import { EalbumService } from '../ealbum.service';
-import { Ng2ImgMaxService } from 'ng2-img-max';
 import { from, Observable, ReplaySubject } from 'rxjs';
 import { mergeMap, tap } from 'rxjs/operators';
 
@@ -39,8 +38,7 @@ export class UploaderComponent implements OnInit, AfterViewInit {
   albumImages: AlbumImage[] = [];
   public files: Set<File> = new Set();
   constructor(
-    private albumService: EalbumService,
-    private imgResize: Ng2ImgMaxService
+    private albumService: EalbumService
   ) { }
 
   ngOnInit(): void {

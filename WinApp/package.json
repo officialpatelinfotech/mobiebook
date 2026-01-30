@@ -4,13 +4,13 @@
   "main": "main.js",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "test": "ng test",
+    "start": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng serve",
+    "build": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng build",
+    "test": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "electron": "electron .",
-    "electron-build": "ng build --prod && electron .",
+    "electron-build": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng build --prod && electron .",
     "start:electron": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng build --base-href ./ && electron .",
     "electron-prod-build": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng build --prod --base-href ./ && electron-packager --out winx64 --overwrite --platform win32 --appname mobiebook . --icon=src\\assets\\img\\icon.ico"
   },

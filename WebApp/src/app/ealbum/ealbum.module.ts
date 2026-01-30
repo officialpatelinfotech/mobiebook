@@ -16,7 +16,6 @@ import { ViewAlbumComponent } from './view-album/view-album.component';
 import { SharedModule } from '../shared/shared.module';
 import { NotificationService } from '../services/notification.service';
 import { DragDropModule } from '@angular/cdk/drag-drop';
-import { Ng2ImgMaxModule, Ng2ImgMaxService } from 'ng2-img-max';
 import { StartPageComponent } from './start-page/start-page.component'; 
 import { AlbumPagesModule } from './album-pages/album-pages.module';
 import { NgxPaginationModule } from 'ngx-pagination';
@@ -63,14 +62,12 @@ const routes: Routes = [
     NgSelectModule,
     SharedModule,
     DragDropModule,
-    Ng2ImgMaxModule,
     AlbumPagesModule,
     NgxPaginationModule
   ],
   providers:[
     EalbumService,
     NotificationService,
-    Ng2ImgMaxService
   ],
   exports:[
     ViewAlbumComponent

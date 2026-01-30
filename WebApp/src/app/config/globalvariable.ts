@@ -1,8 +1,9 @@
+import { environment } from '../../environments/environment';
+
+const API_BASE_URL = environment.apiBaseUrl ?? 'http://localhost:5000/';
+
 export const GLOBAL_VARIABLE = {
-    SERVER_LINK: 'https://api.mobiebook.online/', 
-    LOCAL_LINK: 'https://api.mobiebook.online/',  
-    //SERVER_LINK: 'http://localhost:55704/',   
-   // LOCAL_LINK: 'http://localhost:55704/',  
+        SERVER_LINK: API_BASE_URL,
     API_LINK: 'api/',
     IMG_FOLDER: 'UploadImage/',
     SUCCESS: 'success',
@@ -59,7 +60,8 @@ export enum PageViewType {
     Page = "PAGE",
     Back = "BACK",
     TPFront = "TPFRONT",
-    TPBack = "TPBACK"
+    TPBack = "TPBACK",
+    Emboss = "EMBOSS"
 }
 
 export enum IMG_TYPE {

@@ -7,6 +7,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { LocalstoreService } from 'src/app/services/localstore.service';
 import { RoutingService } from 'src/app/services/routing.service';
+import { GLOBAL_VARIABLE } from 'src/app/config/globalvariable';
 import { AlbumService } from '../album.service';
 
 @Component({
@@ -119,7 +120,7 @@ export class ValidateCustomerComponent implements OnInit {
     // var parts = full.split('.');
     // var sub = parts[0];
     var link = document.createElement('link');
-    link.href = "https://api.mobiebook.online/Resources/" + unicode + "/" + id + "/manifest.json?nocache=" + (new Date()).getTime();
+    link.href = `${GLOBAL_VARIABLE.SERVER_LINK}Resources/${unicode}/${id}/manifest.json?nocache=${(new Date()).getTime()}`;
     link.rel = 'manifest';
     document.getElementsByTagName('head')[0].appendChild(link);
 

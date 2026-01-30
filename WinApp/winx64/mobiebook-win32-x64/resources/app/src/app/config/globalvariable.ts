@@ -1,8 +1,5 @@
 export const GLOBAL_VARIABLE = {        
     SERVER_LINK: 'https://api.mobiebook.online/',
-    LOCAL_LINK: 'https://api.mobiebook.online/',
-    //SERVER_LINK: 'http://localhost:55704/',   
-    //LOCAL_LINK: 'http://localhost:55704/', 
     API_LINK: 'api/',
     IMG_FOLDER: 'UploadImage/',
     SUCCESS: 'success',

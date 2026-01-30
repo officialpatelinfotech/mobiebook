@@ -10,3 +10,15 @@ F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Model\
 F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Model\obj\Debug\net5.0\ref\Photomate.Model.dll
 F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Model\obj\Debug\net5.0\Photomate.Model.pdb
 F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Model\obj\Debug\net5.0\Photomate.Model.csprojAssemblyReference.cache
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\bin\Debug\net5.0\Photomate.Model.deps.json
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\bin\Debug\net5.0\Photomate.Model.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\bin\Debug\net5.0\ref\Photomate.Model.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\bin\Debug\net5.0\Photomate.Model.pdb
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.csproj.AssemblyReference.cache
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.GeneratedMSBuildEditorConfig.editorconfig
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.AssemblyInfoInputs.cache
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.AssemblyInfo.cs
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.csproj.CoreCompileInputs.cache
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\obj\Debug\net5.0\ref\Photomate.Model.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.pdb

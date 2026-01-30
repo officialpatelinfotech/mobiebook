@@ -4,7 +4,7 @@ import { ImagesService } from '../images.service';
 import { FileTree } from '../model/filetree.metadata';
 import { AudioMetaData, FolderDetailMetaData } from '../model/folderdetail.metadata';
 import { from, Observable } from 'rxjs';
-import { concatMap } from 'rxjs/operators';
+import { concatMap, map } from 'rxjs/operators';
 import { AddAlbumMetaData } from '../model/addalbum.metadata';
 import { EalbumService } from '../services/ealbum.service';
 import { HttpEventType, HttpResponse } from '@angular/common/http';
@@ -34,6 +34,8 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   images: string[] = [];
   directory: any[] = [];
   currentWatcher: any;
+
+  private readonly enableUploadDebugLog = true;
 
   selectedDirectory: any;
   isDirectiveLoad: boolean = false;
@@ -446,7 +448,23 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       if (ext.toString().toLowerCase() === ".jpg" || ext.toString().toLowerCase() === ".jpeg" || ext.toString().toLowerCase() === ".png") {
         this.getFileObject("file:///" + row.path, row.name, function (fileObject: any) {
           details.attachImage(fileObject, detail.PageType).subscribe((x) => {
-            saveImg.push({ url: details.saveImagesObservable(x, row.SequenceNo, details.pageType(x.name), detail.PageType, detail), imgName: row.name })
+            const computedViewType = details.pageType(x.name);
+            if (computedViewType === 'EMBOSS') {
+              console.log('[MobieBook][EMBOSS] prepared', {
+                folder: detail?.FolderName,
+                fileName: x?.name,
+                seq: row.SequenceNo,
+                pagetype: detail?.PageType,
+                viewtype: computedViewType,
+                sizeBytes: x?.size
+              });
+            }
+            saveImg.push({
+              url: details.saveImagesObservable(x, row.SequenceNo, computedViewType, detail.PageType, detail),
+              imgName: row.name,
+              viewtype: computedViewType,
+              pagetype: detail?.PageType
+            })
             processImgCounter = processImgCounter + 1;
             if (processImgCounter == counter) {
               details.ProcessImages(saveImg, detail, albumDetail);
@@ -462,12 +480,26 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     let processImgCounter = 1;
     from(imageDetail)
       .pipe(
-        concatMap((x: any) => x.url)
-      ).subscribe((event: any) => {
+        concatMap((x: any) => x.url.pipe(map((event: any) => ({ event, meta: x }))))
+      ).subscribe((payload: any) => {
+
+        const event = payload.event;
+        const meta = payload.meta;
 
         if (event.type === HttpEventType.UploadProgress) {
           // imgRow.Progress = Math.round(100 * event.loaded / event.total);
         } else if (event instanceof HttpResponse) {
+          if (meta?.viewtype === 'EMBOSS') {
+            console.log('[MobieBook][EMBOSS] response', {
+              folder: detail?.FolderName,
+              imgName: meta?.imgName,
+              pagetype: meta?.pagetype,
+              viewtype: meta?.viewtype,
+              status: event.status,
+              ok: event.ok,
+              body: event.body
+            });
+          }
           processImgCounter = processImgCounter + 1;
           if (processImgCounter == imageDetail.length) {
             detail.Status = "Done";
@@ -605,9 +637,16 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     // BACK TP
     if (/^(f2|back( |)tp|last page|back tp)$/.test(normalized)) return 'TPBACK';
 
-    // EMBOSS - match e1, e-1, emb, emboss, embose and variants with/without separators and optional digits
-    // Examples matched: e1, e-1, emb, emboss, embose, emboss1, emboss01, emb01, emboss 1
-    if (/^e-?1$/.test(normalized) || /^emb(?:oss|ose)?(?:\s*\d*)?$/.test(normalized) || normalized === 'emb') {
+    // EMBOSS - match e1, e-1, emb, emboss, embose and variants.
+    // Also supports names that *contain* emboss like "32metalicemboss" or "001RIGHTSIDEMETALICEMBOSS".
+    // Examples matched: e1, e-1, emb, emboss, embose, emboss1, emboss01, emb01, emboss 1, 32metalicemboss
+    if (
+      /^e-?1$/.test(normalized) ||
+      /^emb(?:oss|ose)?(?:\s*\d*)?$/.test(normalized) ||
+      normalized === 'emb' ||
+      normalized.includes('emboss') ||
+      normalized.includes('embose')
+    ) {
       return 'EMBOSS';
     }
 
@@ -770,8 +809,45 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     formData.append('isdisplay', 'true');
     formData.append('photographerid', detail.PhotographerId.toString());
 
+    if (pageType === 'EMBOSS') {
+      console.log('[MobieBook][EMBOSS] sending', {
+        fileName: img?.name,
+        seq,
+        pagetype: imageType,
+        viewtype: pageType,
+        albumid: detail?.EAlbumId,
+        photographerid: detail?.PhotographerId
+      });
+    }
+
+    if (this.enableUploadDebugLog) {
+      this.appendJsonLine(detail?.FolderPath, 'upload-debug.jsonl', {
+        ts: new Date().toISOString(),
+        fileName: img?.name,
+        seq,
+        pagetype: imageType,
+        viewtype: pageType,
+        albumid: detail?.EAlbumId,
+        photographerid: detail?.PhotographerId,
+        sizeBytes: img?.size
+      });
+    }
+
     return this.ealbumService.upload(formData, "api/EAlbum/AcUploadPhotographerImage");
 
+  }
+
+  appendJsonLine(folderPath: any, fileName: string, data: any) {
+    try {
+      if (!folderPath || !fileName) return;
+      const fullPath = folderPath + '/' + fileName;
+      const line = JSON.stringify(data) + '\n';
+      electronFs.appendFile(fullPath, line, (err: any) => {
+        // Intentionally swallow errors; logging should never block uploads.
+      });
+    } catch (error) {
+      // no-op
+    }
   }
 
 

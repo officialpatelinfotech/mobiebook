@@ -13,3 +13,18 @@ F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain
 F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.dll
 F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Debug\net5.0\ref\Photomate.Domain.dll
 F:\Development\Clients\venkatesh\PhotoMate\Project\photomateapi\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.pdb
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\bin\Debug\net5.0\Photomate.Domain.deps.json
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\bin\Debug\net5.0\Photomate.Domain.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\bin\Debug\net5.0\ref\Photomate.Domain.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\bin\Debug\net5.0\Photomate.Domain.pdb
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\bin\Debug\net5.0\Photomate.Model.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\bin\Debug\net5.0\Photomate.Model.pdb
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.csproj.AssemblyReference.cache
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.GeneratedMSBuildEditorConfig.editorconfig
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.AssemblyInfoInputs.cache
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.AssemblyInfo.cs
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.csproj.CoreCompileInputs.cache
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.csproj.CopyComplete
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\ref\Photomate.Domain.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.pdb

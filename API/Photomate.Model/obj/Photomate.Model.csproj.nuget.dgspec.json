@@ -1,27 +1,29 @@
 {
   "format": 1,
   "restore": {
-    "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Model\\Photomate.Model.csproj": {}
+    "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\Photomate.Model.csproj": {}
   },
   "projects": {
-    "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Model\\Photomate.Model.csproj": {
+    "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\Photomate.Model.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Model\\Photomate.Model.csproj",
+        "projectUniqueName": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\Photomate.Model.csproj",
         "projectName": "Photomate.Model",
-        "projectPath": "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Model\\Photomate.Model.csproj",
-        "packagesPath": "C:\\Users\\Sarfaraz Khan\\.nuget\\packages\\",
-        "outputPath": "F:\\Development\\Clients\\venkatesh\\PhotoMate\\Project\\photomateapi\\Photomate.Model\\obj\\",
+        "projectPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\Photomate.Model.csproj",
+        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
+        "outputPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\Sarfaraz Khan\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config"
         ],
         "originalTargetFrameworks": [
           "net5.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -60,7 +62,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.102\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.408\\RuntimeIdentifierGraph.json"
         }
       }
     }

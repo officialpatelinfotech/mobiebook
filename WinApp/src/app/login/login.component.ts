@@ -5,6 +5,7 @@ import { LoginMetaData } from '../model/login.metadata';
 import { AuthService } from '../services/auth.service';
 import { LocalStorageService } from '../services/local-storage.service';
 import { RoutingService } from '../services/routing.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -54,7 +55,8 @@ export class LoginComponent implements OnInit {
 
       this.authService.loginUser(this.loginDetail)
         .subscribe((data: any) => {
-          if (data.IsWindowApp == true) {
+          const canAccessWindowApp = data.IsWindowApp === true;
+          if (!environment.enforceWindowAppAccess || canAccessWindowApp) {
             this.localStoreService.setItem(GLOBAL_VARIABLE.LOGIN_DETAIL, JSON.stringify(data));
             this.localStoreService.setItem(GLOBAL_VARIABLE.TOKEN, data.Token);
             if (this.loginDetail != undefined) {
