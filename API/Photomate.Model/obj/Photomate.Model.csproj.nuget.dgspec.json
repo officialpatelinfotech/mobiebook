@@ -1,24 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\Photomate.Model.csproj": {}
+    "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\Photomate.Model\\Photomate.Model.csproj": {}
   },
   "projects": {
-    "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\Photomate.Model.csproj": {
+    "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\Photomate.Model\\Photomate.Model.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\Photomate.Model.csproj",
+        "projectUniqueName": "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\Photomate.Model\\Photomate.Model.csproj",
         "projectName": "Photomate.Model",
-        "projectPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\Photomate.Model.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\obj\\",
+        "projectPath": "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\Photomate.Model\\Photomate.Model.csproj",
+        "packagesPath": "C:\\Users\\Vikas Yadav\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\Photomate.Model\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config"
+          "C:\\Users\\Vikas Yadav\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net5.0"

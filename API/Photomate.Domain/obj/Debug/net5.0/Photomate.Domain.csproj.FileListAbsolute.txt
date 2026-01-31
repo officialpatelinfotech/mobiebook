@@ -28,3 +28,18 @@ E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Dom
 E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.dll
 E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\ref\Photomate.Domain.dll
 E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.pdb
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\bin\Debug\net5.0\Photomate.Domain.deps.json
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\bin\Debug\net5.0\Photomate.Domain.dll
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\bin\Debug\net5.0\ref\Photomate.Domain.dll
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\bin\Debug\net5.0\Photomate.Domain.pdb
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\bin\Debug\net5.0\Photomate.Model.dll
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\bin\Debug\net5.0\Photomate.Model.pdb
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.csproj.AssemblyReference.cache
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.AssemblyInfoInputs.cache
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.AssemblyInfo.cs
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.csproj.CoreCompileInputs.cache
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.csproj.CopyComplete
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.dll
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\ref\Photomate.Domain.dll
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.pdb

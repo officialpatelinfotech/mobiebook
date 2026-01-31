@@ -1831,24 +1831,19 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Admin\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\Vikas Yadav\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotoMateAPI\\PhotoMateAPI.csproj",
+      "projectUniqueName": "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\PhotoMateAPI\\PhotoMateAPI.csproj",
       "projectName": "PhotoMateAPI",
-      "projectPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotoMateAPI\\PhotoMateAPI.csproj",
-      "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-      "outputPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotoMateAPI\\obj\\",
+      "projectPath": "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\PhotoMateAPI\\PhotoMateAPI.csproj",
+      "packagesPath": "C:\\Users\\Vikas Yadav\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\PhotoMateAPI\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config"
+        "C:\\Users\\Vikas Yadav\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net5.0"
@@ -1860,11 +1855,11 @@
         "net5.0": {
           "targetAlias": "net5.0",
           "projectReferences": {
-            "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Domain\\Photomate.Domain.csproj": {
-              "projectPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Domain\\Photomate.Domain.csproj"
+            "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\Photomate.Domain\\Photomate.Domain.csproj": {
+              "projectPath": "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\Photomate.Domain\\Photomate.Domain.csproj"
             },
-            "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\Photomate.Model.csproj": {
-              "projectPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Model\\Photomate.Model.csproj"
+            "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\Photomate.Model\\Photomate.Model.csproj": {
+              "projectPath": "C:\\Users\\Vikas Yadav\\Documents\\mobiebook\\API\\Photomate.Model\\Photomate.Model.csproj"
             }
           }
         }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { GLOBAL_VARIABLE, IMG_TYPE, PageViewType } from 'src/app/config/globalvariable';
 import { LocalstoreService } from 'src/app/services/localstore.service';
@@ -13,6 +13,8 @@ declare var $: any;
   styleUrls: ['./show-album.component.css']
 })
 export class ShowAlbumComponent implements OnInit {
+  @ViewChild('container', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
+
   albumDetail: any;
   server = GLOBAL_VARIABLE.SERVER_LINK;
   pageDetail: any;
@@ -20,6 +22,7 @@ export class ShowAlbumComponent implements OnInit {
   serverLink = GLOBAL_VARIABLE.SERVER_LINK + "Resources/";
   audio = new Audio();
   imageDetail: any[] = [];
+  private flipbook: any;
 
 
   constructor(
@@ -87,7 +90,6 @@ export class ShowAlbumComponent implements OnInit {
   }
 
   albumDisplay() {
-    debugger;
     let albums = []
     let blankImage = GLOBAL_VARIABLE.DEFAULT_IMG_TP;
     let front = this.pageDetail.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.Front);
@@ -146,8 +148,21 @@ export class ShowAlbumComponent implements OnInit {
 
 
     setTimeout(() => {
+      const $container = $(this.containerRef?.nativeElement);
+      if (!$container || $container.length === 0) {
+        return;
+      }
 
-      $("#container").flipBook({
+      try {
+        if (this.flipbook && typeof this.flipbook.dispose === 'function') {
+          this.flipbook.dispose();
+        }
+      } catch {
+        // ignore
+      }
+      $container.empty();
+
+      this.flipbook = $container.flipBook({
         pages: albums,
         viewMode: '3d',
         btnDownloadPages: { enabled: false },
@@ -167,9 +182,10 @@ export class ShowAlbumComponent implements OnInit {
         backgroundColor: "#150000",
         // skin:"gradient",
         pageFlipDuration: 2,
+        // IMPORTANT: app uses HashLocationStrategy, so flipBook hash deeplinking
+        // breaks Angular routing.
         deeplinking: {
-          enabled: true,
-          prefix: ""
+          enabled: false
         },
         skin: "dark"
       });
@@ -190,11 +206,17 @@ export class ShowAlbumComponent implements OnInit {
 
 
   runMp3() {
-    debugger;
-    this.audio.src = this.server + "Resources/Mp3Files/" + this.albumDetail.Mp3Link;
+    const mp3 = (this.albumDetail?.Mp3Link ?? '').toString().trim();
+    if (!mp3) {
+      return;
+    }
+    this.audio.src = this.server + "Resources/Mp3Files/" + mp3;
     this.audio.load();
     this.audio.loop = true;
-    this.audio.play();
+    const p = this.audio.play();
+    if (p && typeof (p as any).catch === 'function') {
+      (p as any).catch(() => {});
+    }
   }
 
   stopMp3() {

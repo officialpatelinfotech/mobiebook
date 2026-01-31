@@ -828,9 +828,9 @@ BEGIN
     LEFT JOIN manage_mp3 mp ON ed.audio_id = mp.mp3_id  
     LEFT JOIN ealbum_pages pg ON ed.ealbumid = pg.ealbum_id AND pg.page_view_type = 'FRONT'
     WHERE ed.user_id = userid AND (ed.is_deleted is null OR  ed.is_deleted = 0)
-     AND (ed.album_status = album_status || album_status = 'ALL')
-      AND ((ed.couple_detail LIKE CONCAT(search,'%') || search = '') OR
-    (ed.uniq_id like CONCAT(search,'%') || search = ''))
+         AND (ed.album_status = album_status OR album_status = 'ALL')
+            AND ((ed.couple_detail LIKE CONCAT(search,'%') OR search = '') OR
+        (ed.uniq_id like CONCAT(search,'%') OR search = ''))
     ORDER BY  ed.createdon DESC
     LIMIT page_size OFFSET offset_value;
     

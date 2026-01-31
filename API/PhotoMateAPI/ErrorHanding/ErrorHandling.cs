@@ -29,6 +29,9 @@ namespace PhotoMateAPI.ErrorHanding
 
                 switch (error)
                 {
+                    case UnauthorizedAccessException e:
+                        response.StatusCode = (int)HttpStatusCode.Unauthorized;
+                        break;
                     case AppException e:
                         // custom application error
                         response.StatusCode = (int)HttpStatusCode.BadRequest;

@@ -22,3 +22,15 @@ E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Mod
 E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.dll
 E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\obj\Debug\net5.0\ref\Photomate.Model.dll
 E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.pdb
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\bin\Debug\net5.0\Photomate.Model.deps.json
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\bin\Debug\net5.0\Photomate.Model.dll
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\bin\Debug\net5.0\ref\Photomate.Model.dll
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\bin\Debug\net5.0\Photomate.Model.pdb
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.csproj.AssemblyReference.cache
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.AssemblyInfoInputs.cache
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.AssemblyInfo.cs
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.csproj.CoreCompileInputs.cache
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.dll
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\ref\Photomate.Model.dll
+C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.pdb

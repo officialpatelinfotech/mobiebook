@@ -146,3 +146,71 @@ a, a:active, a:visited {
 .icontexs i{
     color: #7f0909;
 }
+
+.landing-card{
+    background: #fff;
+    margin: 30px auto;
+    padding: 30px 20px;
+    box-shadow: 0px 2px 3px 0px #888888;
+}
+
+.landing-title{
+    font-size: 28px;
+    font-weight: 400;
+    color: #c52126;
+    line-height: 1.2;
+    margin: 10px 0 20px 0;
+}
+
+.landing-highlight{
+    font-weight: 500;
+}
+
+.landing-cover{
+    width: 220px;
+    max-width: 100%;
+    margin: 10px auto 20px auto;
+    display: block;
+    border: 1px solid #eee;
+}
+
+.landing-view-btn{
+    margin: 10px 0 20px 0;
+    color: #c52126;
+    background: #fff;
+    border: 1px solid #c52126;
+    border-radius: 4px;
+    padding: 10px 22px;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.landing-by{
+    color: #c52126;
+    font-size: 22px;
+    margin: 10px 0 30px 0;
+}
+
+.landing-share-btn{
+    margin: 0;
+    color: #fff;
+    background: #28a745;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 26px;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0px 3px 6px #00000029;
+}
+
+.landing-a2hs{
+    margin-top: 16px;
+}
+
+.landing-a2hs-btn{
+    background: none;
+    border: none;
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
+}

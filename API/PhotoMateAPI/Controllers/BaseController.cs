@@ -35,7 +35,18 @@ namespace PhotoMateAPI.Controllers
                 token = headerValues.FirstOrDefault();
             }
 
-            return await this.registerProcess.GetUserDetailByToken(token);
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw new UnauthorizedAccessException("Unauthorized: missing AuthKey");
+            }
+
+            var userDetail = await this.registerProcess.GetUserDetailByToken(token);
+            if (userDetail == null || userDetail.UserId <= 0)
+            {
+                throw new UnauthorizedAccessException("Unauthorized: invalid or expired AuthKey");
+            }
+
+            return userDetail;
         }
 
         //public async Task<UserDetailByTokenMetaData> GetCustomerUserDetail()
