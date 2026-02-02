@@ -36,6 +36,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   currentWatcher: any;
 
   private readonly enableUploadDebugLog = true;
+  private readonly coverAlertShownForFolder = new Set<string>();
 
   selectedDirectory: any;
   isDirectiveLoad: boolean = false;
@@ -134,46 +135,67 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   }
 
   checkForNewFolders(path: any) {
-    let files = FileTree.readDir(path);
-    let currentFolderNames = this.folderDetail.map(x => x.FolderName);
-    let hasChanges = false;
-    files.forEach((row: any) => {
-      if (row.isdirective) {
-        if (!currentFolderNames.includes(row.name)) {
-          this.processSingleFolder(row);
-          hasChanges = true;
-        } else {
-          // Update existing folder content
-          let existingFolder = this.folderDetail.find(x => x.FolderName == row.name);
-          if (existingFolder) {
-            let newCount = this.fileCount(row);
-            // Check if count or content changed to avoid unnecessary updates if possible, 
-            // but for now just updating is safer to ensure state is fresh.
-            if (existingFolder.FolderImages && (existingFolder.Counter !== newCount || existingFolder.FolderImages.length !== row.items.length)) {
-              existingFolder.FolderImages = row.items;
-              existingFolder.Counter = newCount;
+    try {
+      console.log('Checking for new folders in:', path);
+      let files = FileTree.readDir(path);
+      let currentFolderNames = this.folderDetail.map(x => x.FolderName);
+      let hasChanges = false;
 
-              // If it was invalid due to missing text file, re-check (optional but good)
-              if (existingFolder.Status === "Invalid" && existingFolder.ErrorDetail === "Order file not found") {
-                let orderFile = this.getTxtFilePath(row.items);
-                if (orderFile != "") {
-                  existingFolder.FolderTextFile = orderFile;
+      files.forEach((row: any) => {
+        if (row.isdirective) {
+          if (!currentFolderNames.includes(row.name)) {
+            console.log('Found new folder:', row.name);
+            this.processSingleFolder(row);
+            hasChanges = true;
+          } else {
+            // Update existing folder content
+            let existingFolder = this.folderDetail.find(x => x.FolderName == row.name);
+            if (existingFolder) {
+              let newCount = this.fileCount(row);
+              if (existingFolder.FolderImages && (existingFolder.Counter !== newCount || existingFolder.FolderImages.length !== row.items.length)) {
+                console.log('Updating existing folder:', row.name);
+                existingFolder.FolderImages = row.items;
+                existingFolder.Counter = newCount;
+
+                // Mandatory cover validation on changes
+                const coverErr = this.getMissingCoverError(row.items, row.name);
+                if (coverErr) {
+                  existingFolder.Status = "Invalid";
+                  existingFolder.ErrorDetail = coverErr.message.split('\n')[0]; // keep ErrorDetail short
+                  this.alertMissingCoversOnce(row.name, coverErr.message);
+                  hasChanges = true;
+                  return;
+                } else if (existingFolder.Status === "Invalid" &&
+                  (existingFolder.ErrorDetail?.toLowerCase?.().includes('front cover') || existingFolder.ErrorDetail?.toLowerCase?.().includes('back cover'))) {
+                  // covers fixed -> allow back to Open (order-file rule still applies below)
                   existingFolder.Status = "Open";
                   existingFolder.ErrorDetail = "";
-                  this.readText(existingFolder.FolderTextFile, row.name);
                 }
+
+                // If it was invalid due to missing text file, re-check
+                if (existingFolder.Status === "Invalid" && existingFolder.ErrorDetail === "Order file not found") {
+                  let orderFile = this.getTxtFilePath(row.items);
+                  if (orderFile != "") {
+                    existingFolder.FolderTextFile = orderFile;
+                    existingFolder.Status = "Open";
+                    existingFolder.ErrorDetail = "";
+                    this.readText(existingFolder.FolderTextFile, row.name);
+                  }
+                }
+                hasChanges = true;
               }
-              hasChanges = true;
             }
           }
         }
-      }
-    });
+      });
 
-    if (hasChanges) {
-      let allFolder = JSON.stringify(this.folderDetail);
-      this.allfolderDetail = JSON.parse(allFolder);
-      this.cdr.detectChanges();
+      if (hasChanges) {
+        let allFolder = JSON.stringify(this.folderDetail);
+        this.allfolderDetail = JSON.parse(allFolder);
+        this.cdr.detectChanges();
+      }
+    } catch (err) {
+      console.error('Error in checkForNewFolders:', err);
     }
   }
 
@@ -182,6 +204,30 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       return;
 
     let row = x;
+
+    // Mandatory cover validation (popup + mark invalid)
+    const coverErr = this.getMissingCoverError(row.items, row.name);
+    if (coverErr) {
+      let fold = new FolderDetailMetaData();
+      fold.FolderName = row.name;
+      fold.PageType = "Spread";
+      fold.FolderTextFile = this.getTxtFilePath(row.items);
+      fold.IsProcess = false;
+      fold.EAlbumId = 0;
+      fold.FolderPath = row.path;
+      fold.Counter = this.fileCount(row);
+      fold.FolderImages = row.items;
+      fold.Status = "Invalid";
+      fold.ErrorDetail = coverErr.message.split('\n')[0];
+      this.folderDetail.push(fold);
+
+      this.alertMissingCoversOnce(row.name, coverErr.message);
+
+      let allFolder = JSON.stringify(this.folderDetail);
+      this.allfolderDetail = JSON.parse(allFolder);
+      return;
+    }
+
     let orderFile = this.getTxtFilePath(row.items);
     let fold = new FolderDetailMetaData();
     fold.FolderName = row.name;
@@ -195,6 +241,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       fold.FolderImages = row.items;
       fold.Status = "Invalid"
       fold.ErrorDetail = "Order file not found";
+      alert(`Folder '${row.name}' Invalid: Order file not found (needs .txt file)`); // Added Debug Alert
       this.folderDetail.push(fold);
     } else {
       fold.Counter = this.fileCount(row);
@@ -215,6 +262,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     var directory = dialog.showOpenDialog({ properties: ['openDirectory'] })
       .then((x: any) => {
         this.excelDetailData = [];
+        this.coverAlertShownForFolder.clear(); // allow alerts again for newly browsed root
         debugger;
 
         var fileTree = new FileTree(x.filePaths[0]);
@@ -400,7 +448,13 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     if (this.selectedAudioId > 0) {
       if (this.isAllProcess == false && this.isCancel == false) {
         this.isAllProcess = true;
+
+        // Skip any "Open" folder that fails mandatory cover validation
         let row = this.folderDetail.find(x => x.Status == "Open");
+        while (row && !this.ensureMandatoryCoversOrInvalidate(row)) {
+          row = this.folderDetail.find(x => x.Status == "Open");
+        }
+
         if (row != undefined) {
           this.saveEalbumInfo(row);
         }
@@ -415,300 +469,38 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     else {
       alert("Please choose audio before process");
     }
-
-
   }
 
-  totalFileCount(items: any) {
-    let i = 0;
-    if (items.length > 0) {
-      for (let j = 0; j < items.length; j++) {
-        let row = items[j];
-        let ext = this.getExtention(row.name);
-        if (ext.toString().toLowerCase() === ".jpg" || ext.toString().toLowerCase() === ".jpeg" || ext.toString().toLowerCase() === ".png") {
-          i++;
-        }
-      }
-    }
-    return i;
-  }
+  private ensureMandatoryCoversOrInvalidate(detail: any): boolean {
+    const coverErr = this.getMissingCoverError(detail?.FolderImages, detail?.FolderName);
+    if (!coverErr) return true;
 
-  albumDetail: any[] = [];
-  ProcessRow(detail: any, albumDetail: any) {
-    debugger;
-    let imgs = detail.FolderImages;
+    detail.Status = "Invalid";
+    detail.ErrorDetail = coverErr.message.split('\n')[0];
 
-    let details = this;
-    let processImgCounter = 0;
-    let seq = this.changeSequence(imgs);
-    let saveImg: any[] = []
-    let counter = this.totalFileCount(imgs);
-    imgs.forEach(async (row: { name: string | string[]; path: string; SequenceNo: number; }) => {
-      let ext = this.getExtention(row.name);
-      if (ext.toString().toLowerCase() === ".jpg" || ext.toString().toLowerCase() === ".jpeg" || ext.toString().toLowerCase() === ".png") {
-        this.getFileObject("file:///" + row.path, row.name, function (fileObject: any) {
-          details.attachImage(fileObject, detail.PageType).subscribe((x) => {
-            const computedViewType = details.pageType(x.name);
-            if (computedViewType === 'EMBOSS') {
-              console.log('[MobieBook][EMBOSS] prepared', {
-                folder: detail?.FolderName,
-                fileName: x?.name,
-                seq: row.SequenceNo,
-                pagetype: detail?.PageType,
-                viewtype: computedViewType,
-                sizeBytes: x?.size
-              });
-            }
-            saveImg.push({
-              url: details.saveImagesObservable(x, row.SequenceNo, computedViewType, detail.PageType, detail),
-              imgName: row.name,
-              viewtype: computedViewType,
-              pagetype: detail?.PageType
-            })
-            processImgCounter = processImgCounter + 1;
-            if (processImgCounter == counter) {
-              details.ProcessImages(saveImg, detail, albumDetail);
-            }
-          });
-        });
-      }
-    })
-
-  }
-
-  ProcessImages(imageDetail: any[], detail: any, albumDetail: any) {
-    let processImgCounter = 1;
-    from(imageDetail)
-      .pipe(
-        concatMap((x: any) => x.url.pipe(map((event: any) => ({ event, meta: x }))))
-      ).subscribe((payload: any) => {
-
-        const event = payload.event;
-        const meta = payload.meta;
-
-        if (event.type === HttpEventType.UploadProgress) {
-          // imgRow.Progress = Math.round(100 * event.loaded / event.total);
-        } else if (event instanceof HttpResponse) {
-          if (meta?.viewtype === 'EMBOSS') {
-            console.log('[MobieBook][EMBOSS] response', {
-              folder: detail?.FolderName,
-              imgName: meta?.imgName,
-              pagetype: meta?.pagetype,
-              viewtype: meta?.viewtype,
-              status: event.status,
-              ok: event.ok,
-              body: event.body
-            });
-          }
-          processImgCounter = processImgCounter + 1;
-          if (processImgCounter == imageDetail.length) {
-            detail.Status = "Done";
-            var allData = this.allfolderDetail.find(x => x.FolderName == detail.FolderName);
-            if (allData != undefined) {
-              allData.Status = "Done";
-              this.excelDetail(albumDetail, detail);
-            }
-            this.updateImageStatus(detail, "DONE");
-
-            if (this.isAllProcess && !this.isCancel) {
-              this.isAllProcess = false;
-              this.ProcessAllImage();
-            } else {
-              this.isAllProcess = false;
-            }
-          }
-        }
-
-      })
-  }
-
-  updateImageStatus(detail: any, imgName: string) {
-    try {
-      let log = JSON.parse(detail.ItemLog)
-      if (log != null && log != undefined) {
-        log.forEach((element: any) => {
-          element.Status = "Done";
-        });
-      }
-      detail.ItemLog = JSON.stringify(log);
-
-      this.log(detail.FolderPath, log);
-    }
-    catch (error) {
-
+    const allData = this.allfolderDetail?.find((x: any) => x.FolderName == detail.FolderName);
+    if (allData) {
+      allData.Status = "Invalid";
+      allData.ErrorDetail = detail.ErrorDetail;
     }
 
-  }
-
-  changeSequence(images: any) {
-    // 1. Sort all names alphanumerically first to establish baseline order for pages
-    let imgName = images.map((x: any) => x.name);
-    if (typeof alphaNumericSort === "function") {
-      alphaNumericSort(imgName);
-    } else {
-      imgName.sort(); // Fallback
-    }
-
-    // 2. Buckets for special pages
-    let front: any[] = [];
-    let blanks: any[] = [];
-    let emboss: any[] = [];
-    let frontTP: any[] = [];
-    let pages: any[] = [];
-    let backTP: any[] = [];
-    let back: any[] = [];
-
-    // 3. Map for lookup
-    let imageMap = new Map();
-    images.forEach((img: any) => imageMap.set(img.name, img));
-
-    // 4. Distribute based on pageType
-    // Iterating through sorted imgName ensures 'pages' bucket ends up sorted
-    imgName.forEach((name: any) => {
-      let img = imageMap.get(name);
-      if (img) {
-        let pType = this.pageType(name);
-        if (pType === 'FRONT') front.push(img);
-        else if (pType === 'BLANK') blanks.push(img);
-        else if (pType === 'EMBOSS') emboss.push(img);
-        else if (pType === 'TPFRONT') frontTP.push(img);
-        else if (pType === 'TPBACK') backTP.push(img);
-        else if (pType === 'BACK') back.push(img);
-        else pages.push(img);
-      }
-    });
-
-    // 5. Concatenate in correct order
-    // Order: Front Cover -> Blank -> Front TP -> Blank -> Emboss -> Standard Pages -> Back TP -> Back Cover
-    let finalOrder = [
-      ...front,
-      ...blanks.slice(0, 1),
-      ...frontTP,
-      ...blanks.slice(0, 1),
-      ...emboss,
-      ...blanks.slice(2),
-      ...pages,
-      ...backTP,
-      ...back
-    ];
-
-    // 6. Assign SequenceNo
-    finalOrder.forEach((img: any, index: number) => {
-      img.SequenceNo = index + 1;
-    });
-  }
-
-  // alphaNumericSort = (arr = []) => {
-  //   const sorter = (a: any, b: any) => {
-  //     const isNumber = (v: any) => (+v).toString() === v;                                  nb                      e
-  //     const aPart = a.match(/\d+|\D+/g);
-  //     const bPart = b.match(/\d+|\D+/g);
-  //     let i = 0; let len = Math.min(aPart.length, bPart.length);
-  //     while (i < len && aPart[i] === bPart[i]) { i++; };
-  //     if (i === len) {
-  //       return aPart.length - bPart.length;
-  //     };
-  //     if (isNumber(aPart[i]) && isNumber(bPart[i])) {
-  //       return aPart[i] - bPart[i];
-  //     };
-  //     return aPart[i].localeCompare(bPart[i]);
-  //   };
-  //   arr.sort(sorter);
-  // };
-  pageType(name: string) {
-    if (!name) return 'PAGE';
-
-    // Remove extension, lowercase and normalize separators so "emboss_01", "emboss-1", "emboss 1" all match
-    const lastIndex = name.lastIndexOf('.');
-    let file = lastIndex > -1 ? name.substring(0, lastIndex) : name;
-    file = file.toLowerCase().trim();
-    // replace underscores/hyphens with space and collapse multiple spaces
-    const normalized = file.replace(/[_\-]+/g, ' ').replace(/\s+/g, ' ').trim();
-
-    // FRONT COVER
-    if (/^(c1|front( |$)|front cover|frontcover)$/.test(normalized)) return 'FRONT';
-
-    // BACK COVER
-    if (/^(c2|back( |$)|back cover|backcover)$/.test(normalized)) return 'BACK';
-
-    // FRONT TP
-    if (/^(f1|front( |)tp|first page|front tp)$/.test(normalized)) return 'TPFRONT';
-
-    // BACK TP
-    if (/^(f2|back( |)tp|last page|back tp)$/.test(normalized)) return 'TPBACK';
-
-    // EMBOSS - match e1, e-1, emb, emboss, embose and variants.
-    // Also supports names that *contain* emboss like "32metalicemboss" or "001RIGHTSIDEMETALICEMBOSS".
-    // Examples matched: e1, e-1, emb, emboss, embose, emboss1, emboss01, emb01, emboss 1, 32metalicemboss
-    if (
-      /^e-?1$/.test(normalized) ||
-      /^emb(?:oss|ose)?(?:\s*\d*)?$/.test(normalized) ||
-      normalized === 'emb' ||
-      normalized.includes('emboss') ||
-      normalized.includes('embose')
-    ) {
-      return 'EMBOSS';
-    }
-
-    // BLANK
-    if (/^b\d*$/.test(normalized) || /^blank( |$)/.test(normalized) || normalized === 'black') return 'BLANK';
-
-    return 'PAGE';
-  }
-
-
-
-  getFileBlob = function (url: string, cb: (arg0: any) => void) {
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", url);
-    xhr.responseType = "blob";
-    xhr.addEventListener('load', function () {
-      cb(xhr.response);
-    });
-    xhr.send();
-  };
-
-  blobToFile = function (blob: { lastModifiedDate: Date; name: any; }, name: any) {
-    blob.lastModifiedDate = new Date();
-    blob.name = name;
-    return blob;
-  };
-
-  getFileObject(filePathOrUrl: any, filename: any, cb: any) {
-    let detail = this;
-    this.getFileBlob(filePathOrUrl, function (blob: any) {
-      cb(detail.blobToFile(blob, filename));
-    });
-  };
-
-
-
-  attachImage(file: any, viewType: any): Observable<any> {
-    let width = 1024;
-    if (viewType == IMG_TYPE.Spread) {
-      width = 2048;
-    }
-    const options = {
-      targetSize: 0.5,
-      quality: 0.75,
-      maxWidth: width,
-      maxHeight: 768
-    }
-    return new Observable((observer: { next: (arg0: File) => void; complete: () => void; }) => {
-      const compress = new Compress(options)
-      compress.compress([file])
-        .then((conversion: { photo: any; info: any; }[]) => {
-          const { photo, info } = conversion[0];
-          var compressFile = new File([photo.data], file.name, { type: file.type });
-          observer.next(compressFile);
-          observer.complete();
-        })
-    });
-
+    this.alertMissingCoversOnce(detail?.FolderName, coverErr.message);
+    this.cdr.detectChanges();
+    return false;
   }
 
   saveEalbumInfo(saveInfo: any) {
     debugger;
+
+    // Hard-stop processing if covers are missing (prevents "Success" even if earlier validation was skipped)
+    if (!this.ensureMandatoryCoversOrInvalidate(saveInfo)) {
+      if (this.isAllProcess == true) {
+        this.isAllProcess = false;
+        this.ProcessAllImage();
+      }
+      return;
+    }
+
     if (this.selectedAudioId <= 0) {
       alert("Please choose audio before process");
       return;
@@ -793,6 +585,89 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     }
 
 
+  }
+
+  ProcessRow(saveInfo: any, data: any) {
+    let images = saveInfo.FolderImages;
+    let validImages: any[] = [];
+
+    for (let i = 0; i < images.length; i++) {
+      let row = images[i];
+      let ext = this.getExtention(row.name);
+      if (ext) {
+        let extStr = ext.toString().toLowerCase();
+        if (extStr === ".jpg" || extStr === ".jpeg" || extStr === ".png") {
+          validImages.push(row);
+        }
+      }
+    }
+
+    if (typeof alphaNumericSort !== 'undefined') {
+      try {
+        validImages.sort((a, b) => alphaNumericSort(a.name, b.name));
+      } catch (e) {
+        validImages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+      }
+    } else {
+      validImages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+    }
+
+    let seq = 1;
+    from(validImages).pipe(
+      concatMap((item: any) => {
+        if (this.isCancel) {
+          throw new Error("Cancelled");
+        }
+
+        let buffer = electronFs.readFileSync(item.path);
+        let file = new File([buffer], item.name, { type: 'image/jpeg' });
+
+        let pageType = "Spread";
+        let nameLower = item.name.toLowerCase();
+
+        if (/(^|[_\s-])(front[\s_-]?cover|c1)(?=\.)/i.test(nameLower)) {
+          pageType = "FRONT";
+        }
+        else if (/(^|[_\s-])(back[\s_-]?cover|c2)(?=\.)/i.test(nameLower)) {
+          pageType = "BACK";
+        }
+        else if (nameLower.includes("front tp")) {
+          pageType = "TPFRONT";
+        }
+        else if (nameLower.includes("back tp")) {
+          pageType = "TPBACK";
+        }
+        else if (nameLower.includes("emboss")) {
+          pageType = "EMBOSS";
+        }
+
+        return this.saveImagesObservable(file, seq++, pageType, pageType, saveInfo);
+      })
+    ).subscribe(
+      (res: any) => {
+        // Optional: Update progress here if needed
+      },
+      (err: any) => {
+        console.error(err);
+
+        if (err?.message !== "Cancelled") {
+          saveInfo.Status = "Invalid";
+          saveInfo.ErrorDetail = err?.message || "Image upload failed";
+        }
+
+        this.isAllProcess = false;
+        this.cdr.detectChanges();
+      },
+      () => {
+        if (!this.isCancel) {
+          saveInfo.Status = "Done";
+          this.cdr.detectChanges();
+          if (this.isAllProcess) {
+            this.ProcessAllImage();
+          }
+        }
+      }
+    );
   }
 
   saveImagesObservable(img: File, seq: number, pageType: any, imageType: any, detail: any): Observable<any> {
@@ -1039,32 +914,37 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
   reload(detail: any) {
     debugger;
-    //alert('Under development');
     let path = detail.FolderPath;
     var fileTree = FileTree.readDir(path);
     console.log("Filetree: ", fileTree);
 
     let rowDetail = this.folderDetail.find(x => x.FolderName == detail.FolderName);
     if (rowDetail != undefined) {
+      // Mandatory cover validation (popup + mark invalid)
+      const coverErr = this.getMissingCoverError(fileTree, detail.FolderName);
+      if (coverErr) {
+        rowDetail.Counter = this.fileCountSingle(fileTree);
+        rowDetail.FolderImages = fileTree;
+        rowDetail.Status = "Invalid";
+        rowDetail.ErrorDetail = coverErr.message.split('\n')[0];
+        this.alertMissingCoversOnce(detail.FolderName, coverErr.message);
+
+        var detailsInvalid = JSON.stringify(this.folderDetail);
+        this.allfolderDetail = JSON.parse(detailsInvalid);
+        return;
+      }
+
       let orderFile = this.getTxtFilePath(fileTree);
       rowDetail.Counter = this.fileCountSingle(fileTree);
       rowDetail.FolderImages = fileTree;
       rowDetail.Status = "Open"
       this.readText(orderFile, detail.FolderName);
 
-
       let itemDetail = this.logDetail(fileTree)
-
       this.readLogText(path, itemDetail, detail.FolderName)
 
-      // let displayRow = this.allfolderDetail.find(x => x.FolderName == detail.FolderName);
-      // if(displayRow != null){
-      //   displayRow = rowDetail;
-
-      // }
       var details = JSON.stringify(this.folderDetail);
       this.allfolderDetail = JSON.parse(details);
-
     }
   }
 
@@ -1142,5 +1022,41 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     return "";
   }
 
+
+  getMissingCoverError(files: any[], folderName: string): { message: string } | null {
+    let hasFront = false;
+    let hasBack = false;
+
+    // STRICT matching → prevents C12 / C21 false positives
+    const frontRegex = /(^|[_\s-])(front[\s_-]?cover|c1)(?=\.)/i;
+    const backRegex = /(^|[_\s-])(back[\s_-]?cover|c2)(?=\.)/i;
+
+    if (!Array.isArray(files)) return null;
+
+    for (const f of files) {
+      const name = (f?.name || '').toLowerCase();
+      if (frontRegex.test(name)) hasFront = true;
+      if (backRegex.test(name)) hasBack = true;
+    }
+
+    if (!hasFront && !hasBack)
+      return { message: "Front Cover and Back Cover are mandatory" };
+
+    if (!hasFront)
+      return { message: "Front Cover is mandatory" };
+
+    if (!hasBack)
+      return { message: "Back Cover is mandatory" };
+
+    return null;
+  }
+
+  alertMissingCoversOnce(folderName: string, message: string) {
+    if (this.coverAlertShownForFolder.has(folderName)) {
+      return;
+    }
+    this.coverAlertShownForFolder.add(folderName);
+    alert(message);
+  }
 
 }
