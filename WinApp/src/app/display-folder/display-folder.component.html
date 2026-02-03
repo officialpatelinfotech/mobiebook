@@ -97,7 +97,7 @@
                             </thead>
                             <tbody>
                                 <tr *ngFor="let f of allfolderDetail"
-                                    [ngClass]="{'table-info': f.Status === 'In Progress'}">
+                                    [ngClass]="{'table-info': f.Status === 'In Progress', 'table-warning': f.Status === 'Waiting'}">
                                     <td>
                                         <span title="{{f.FolderName}}"> {{trimStr(f.FolderName)}}
                                         </span>
@@ -116,10 +116,11 @@
                                     </td>
                                     <td class="text-center">
                                         <span *ngIf="f.Status === 'Done'" style="color: green;"> SUCCESS</span>
+                                        <span *ngIf="f.Status === 'Waiting'" style="color: #b26a00;"> WAITING FOR INTERNET</span>
                                         <span *ngIf="f.Status === 'Invalid'" style="color: red;">
                                             <span style="cursor: pointer;" title="{{f.ErrorDetail}}">FAILED</span>
                                         </span>
-                                        <span *ngIf="f.Status !== 'Done'  && f.Status !== 'Invalid'"
+                                        <span *ngIf="f.Status !== 'Done'  && f.Status !== 'Invalid' && f.Status !== 'Waiting'"
                                             style="color: gray;"> {{f.Status}}</span>
                                         <span *ngIf="f.Status === 'Invalid'">
                                             <i class="icon-spaces ti-info" (click)="viewMessage(f.ErrorDetail)"></i>

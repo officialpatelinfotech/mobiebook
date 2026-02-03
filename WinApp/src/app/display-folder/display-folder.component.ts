@@ -3,12 +3,12 @@ import { ElectronService } from 'ngx-electron';
 import { ImagesService } from '../images.service';
 import { FileTree } from '../model/filetree.metadata';
 import { AudioMetaData, FolderDetailMetaData } from '../model/folderdetail.metadata';
-import { from, Observable } from 'rxjs';
-import { concatMap, map } from 'rxjs/operators';
+import { from, fromEvent, Observable, of, throwError } from 'rxjs';
+import { catchError, concatMap, filter, map, retryWhen, switchMap, take, tap } from 'rxjs/operators';
 import { AddAlbumMetaData } from '../model/addalbum.metadata';
 import { EalbumService } from '../services/ealbum.service';
 import { HttpEventType, HttpResponse } from '@angular/common/http';
-import { IMG_TYPE } from '../config/globalvariable';
+import { PageViewType } from '../config/globalvariable';
 import { ExcelExportService } from '../excel-export.service';
 
 const Compress = require('client-compress')
@@ -67,6 +67,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     this.statusList.push({ Id: 'ALL', Text: 'All' });
     this.statusList.push({ Id: 'Open', Text: 'Open' });
     this.statusList.push({ Id: 'In Progress', Text: 'In Progress' });
+    this.statusList.push({ Id: 'Waiting', Text: 'Waiting for Internet' });
     this.statusList.push({ Id: 'Invalid', Text: 'Failed' });
     this.statusList.push({ Id: 'Done', Text: 'Success' });
   }
@@ -78,6 +79,162 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     if (this.currentWatcher) {
       this.currentWatcher.close();
+    }
+  }
+
+  private setStatus(detail: any, status: string, errorDetail: string = "") {
+    if (!detail) return;
+    detail.Status = status;
+    if (typeof errorDetail !== 'undefined') {
+      detail.ErrorDetail = errorDetail;
+    }
+
+    const allData = this.allfolderDetail?.find((x: any) => x.FolderName == detail.FolderName);
+    if (allData) {
+      allData.Status = status;
+      if (typeof errorDetail !== 'undefined') {
+        allData.ErrorDetail = errorDetail;
+      }
+    }
+    this.cdr.detectChanges();
+  }
+
+  private isOfflineError(error: any): boolean {
+    try {
+      if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) return true;
+    } catch { }
+
+    if (!error) return false;
+
+    // Upload requests bypass JwtInterceptor catchError, so these can be HttpErrorResponse
+    if (typeof error === 'object') {
+      const status = (error as any).status;
+      if (status === 0) return true;
+      const message = (error as any).message;
+      if (typeof message === 'string' && /network error|cannot reach server|offline|failed to fetch/i.test(message)) return true;
+      const errorText = (error as any).error;
+      if (typeof errorText === 'string' && /network error|cannot reach server|offline/i.test(errorText)) return true;
+      if ((error as any).name === 'ProgressEvent') return true;
+    }
+
+    // JSON requests pass through JwtInterceptor catchError, which throws a string
+    if (typeof error === 'string') {
+      return /network error|cannot reach server|offline/i.test(error);
+    }
+
+    return false;
+  }
+
+  private waitForOnline$(): Observable<void> {
+    try {
+      if (typeof navigator !== 'undefined' && navigator && navigator.onLine === true) {
+        return of(void 0);
+      }
+    } catch { }
+    return fromEvent(window, 'online').pipe(take(1), map(() => void 0));
+  }
+
+  private retryWhenOffline(detail: any) {
+    return (errors: Observable<any>) =>
+      errors.pipe(
+        switchMap((err) => {
+          if (!this.isOfflineError(err)) {
+            return throwError(() => err);
+          }
+
+          this.setStatus(detail, 'Waiting', 'Waiting for Internet');
+          return this.waitForOnline$().pipe(
+            tap(() => this.setStatus(detail, 'In Progress', ''))
+          );
+        })
+      );
+  }
+
+  private normalizeError(err: any): string {
+    if (!err) return 'Unknown error';
+    if (typeof err === 'string') return err;
+    if (typeof err?.message === 'string') return err.message;
+    if (typeof err?.error === 'string') return err.error;
+    try { return JSON.stringify(err); } catch { return String(err); }
+  }
+
+  private readLogFile(folderPath: string): any[] | null {
+    try {
+      const logPath = folderPath + '/log.txt';
+      if (!electronFs.existsSync(logPath)) return null;
+      const raw = electronFs.readFileSync(logPath, { encoding: 'utf8' });
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async fileTreeToFile(fileNode: any): Promise<File> {
+    const fullPath = fileNode?.path;
+    const name = fileNode?.name;
+    if (!fullPath || !name) {
+      throw new Error('Invalid file node');
+    }
+
+    const ext = (this.getExtention(name) || '').toString().toLowerCase();
+    const mime = ext === '.png' ? 'image/png' : 'image/jpeg';
+
+    const buffer: Uint8Array = await new Promise((resolve, reject) => {
+      try {
+        electronFs.readFile(fullPath, (err: any, data: any) => {
+          if (err) return reject(err);
+          // data is Node Buffer
+          resolve(new Uint8Array(data));
+        });
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+    // Ensure the backing store is a plain ArrayBuffer (avoids SharedArrayBuffer typing issues)
+    const copied = new Uint8Array(buffer);
+    return new File([copied.buffer], name, { type: mime });
+  }
+
+  private getImageTypeFromName(fileName: string): PageViewType {
+    const n = (fileName || '').toLowerCase();
+    if (n.includes('front') && n.includes('cover')) return PageViewType.Front;
+    if (n.includes('back') && n.includes('cover')) return PageViewType.Back;
+    return PageViewType.Page;
+  }
+
+  private getMissingCoverError(items: any[] | undefined, folderName?: string): { message: string } | null {
+    if (!items || items.length === 0) return null;
+
+    const files = items
+      .filter(x => x && x.isdirective === false)
+      .map(x => (x.name || '').toString().toLowerCase());
+
+    const hasFront = files.some(n => n.includes('front') && n.includes('cover'));
+    const hasBack = files.some(n => n.includes('back') && n.includes('cover'));
+
+    if (hasFront && hasBack) return null;
+
+    const missing: string[] = [];
+    if (!hasFront) missing.push('Front cover');
+    if (!hasBack) missing.push('Back cover');
+
+    const name = folderName ? ` (${folderName})` : '';
+    return {
+      message: `${missing.join(' and ')} not found${name}. Please add the missing cover image(s).`
+    };
+  }
+
+  private alertMissingCoversOnce(folderName: string, message: string) {
+    try {
+      if (!folderName) return;
+      if (this.coverAlertShownForFolder.has(folderName)) return;
+      this.coverAlertShownForFolder.add(folderName);
+      alert(message);
+    } catch {
+      // no-op
     }
   }
 
@@ -135,67 +292,59 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   }
 
   checkForNewFolders(path: any) {
-    try {
-      console.log('Checking for new folders in:', path);
-      let files = FileTree.readDir(path);
-      let currentFolderNames = this.folderDetail.map(x => x.FolderName);
-      let hasChanges = false;
+    let files = FileTree.readDir(path);
+    let currentFolderNames = this.folderDetail.map(x => x.FolderName);
+    let hasChanges = false;
+    files.forEach((row: any) => {
+      if (row.isdirective) {
+        if (!currentFolderNames.includes(row.name)) {
+          this.processSingleFolder(row);
+          hasChanges = true;
+        } else {
+          // Update existing folder content
+          let existingFolder = this.folderDetail.find(x => x.FolderName == row.name);
+          if (existingFolder) {
+            let newCount = this.fileCount(row);
+            if (existingFolder.FolderImages && (existingFolder.Counter !== newCount || existingFolder.FolderImages.length !== row.items.length)) {
+              existingFolder.FolderImages = row.items;
+              existingFolder.Counter = newCount;
 
-      files.forEach((row: any) => {
-        if (row.isdirective) {
-          if (!currentFolderNames.includes(row.name)) {
-            console.log('Found new folder:', row.name);
-            this.processSingleFolder(row);
-            hasChanges = true;
-          } else {
-            // Update existing folder content
-            let existingFolder = this.folderDetail.find(x => x.FolderName == row.name);
-            if (existingFolder) {
-              let newCount = this.fileCount(row);
-              if (existingFolder.FolderImages && (existingFolder.Counter !== newCount || existingFolder.FolderImages.length !== row.items.length)) {
-                console.log('Updating existing folder:', row.name);
-                existingFolder.FolderImages = row.items;
-                existingFolder.Counter = newCount;
+              // Mandatory cover validation on changes
+              const coverErr = this.getMissingCoverError(row.items, row.name);
+              if (coverErr) {
+                existingFolder.Status = "Invalid";
+                existingFolder.ErrorDetail = coverErr.message.split('\n')[0]; // keep ErrorDetail short
+                this.alertMissingCoversOnce(row.name, coverErr.message);
+                hasChanges = true;
+                return;
+              } else if (existingFolder.Status === "Invalid" &&
+                (existingFolder.ErrorDetail?.toLowerCase?.().includes('front cover') || existingFolder.ErrorDetail?.toLowerCase?.().includes('back cover'))) {
+                // covers fixed -> allow back to Open (order-file rule still applies below)
+                existingFolder.Status = "Open";
+                existingFolder.ErrorDetail = "";
+              }
 
-                // Mandatory cover validation on changes
-                const coverErr = this.getMissingCoverError(row.items, row.name);
-                if (coverErr) {
-                  existingFolder.Status = "Invalid";
-                  existingFolder.ErrorDetail = coverErr.message.split('\n')[0]; // keep ErrorDetail short
-                  this.alertMissingCoversOnce(row.name, coverErr.message);
-                  hasChanges = true;
-                  return;
-                } else if (existingFolder.Status === "Invalid" &&
-                  (existingFolder.ErrorDetail?.toLowerCase?.().includes('front cover') || existingFolder.ErrorDetail?.toLowerCase?.().includes('back cover'))) {
-                  // covers fixed -> allow back to Open (order-file rule still applies below)
+              // If it was invalid due to missing text file, re-check
+              if (existingFolder.Status === "Invalid" && existingFolder.ErrorDetail === "Order file not found") {
+                let orderFile = this.getTxtFilePath(row.items);
+                if (orderFile != "") {
+                  existingFolder.FolderTextFile = orderFile;
                   existingFolder.Status = "Open";
                   existingFolder.ErrorDetail = "";
+                  this.readText(existingFolder.FolderTextFile, row.name);
                 }
-
-                // If it was invalid due to missing text file, re-check
-                if (existingFolder.Status === "Invalid" && existingFolder.ErrorDetail === "Order file not found") {
-                  let orderFile = this.getTxtFilePath(row.items);
-                  if (orderFile != "") {
-                    existingFolder.FolderTextFile = orderFile;
-                    existingFolder.Status = "Open";
-                    existingFolder.ErrorDetail = "";
-                    this.readText(existingFolder.FolderTextFile, row.name);
-                  }
-                }
-                hasChanges = true;
               }
+              hasChanges = true;
             }
           }
         }
-      });
-
-      if (hasChanges) {
-        let allFolder = JSON.stringify(this.folderDetail);
-        this.allfolderDetail = JSON.parse(allFolder);
-        this.cdr.detectChanges();
       }
-    } catch (err) {
-      console.error('Error in checkForNewFolders:', err);
+    });
+
+    if (hasChanges) {
+      let allFolder = JSON.stringify(this.folderDetail);
+      this.allfolderDetail = JSON.parse(allFolder);
+      this.cdr.detectChanges();
     }
   }
 
@@ -241,7 +390,6 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       fold.FolderImages = row.items;
       fold.Status = "Invalid"
       fold.ErrorDetail = "Order file not found";
-      alert(`Folder '${row.name}' Invalid: Order file not found (needs .txt file)`); // Added Debug Alert
       this.folderDetail.push(fold);
     } else {
       fold.Counter = this.fileCount(row);
@@ -511,6 +659,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     if (saveInfo.EmailAddress != undefined && saveInfo.EmailAddress != ""
       && saveInfo.EmailAddress != null) {
       this.ealbumService.getPhotographerId(saveInfo.EmailAddress.trim())
+        .pipe(retryWhen(this.retryWhenOffline(saveInfo)))
         .subscribe((photographerId: any) => {
           if (photographerId > 0) {
             saveInfo.Status = "In Progress";
@@ -536,6 +685,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
             }
 
             this.ealbumService.addLabAlbumDetail(addAlbum)
+              .pipe(retryWhen(this.retryWhenOffline(saveInfo)))
               .subscribe((data: any) => {
                 saveInfo.EAlbumId = data.ealbumId;
                 saveInfo.PhotographerId = photographerId;
@@ -545,7 +695,17 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
               },
                 (error: any) => {
+                  if (this.isOfflineError(error)) {
+                    // retryWhenOffline will usually handle this, but keep a fallback just in case
+                    this.setStatus(saveInfo, 'Waiting', 'Waiting for Internet');
+                    return;
+                  }
+                  this.setStatus(saveInfo, 'Invalid', this.normalizeError(error));
 
+                  if (this.isAllProcess == true) {
+                    this.isAllProcess = false;
+                    this.ProcessAllImage();
+                  }
                 })
           }
           else {
@@ -565,7 +725,16 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
           }
         },
           error => {
+            if (this.isOfflineError(error)) {
+              this.setStatus(saveInfo, 'Waiting', 'Waiting for Internet');
+              return;
+            }
+            this.setStatus(saveInfo, 'Invalid', this.normalizeError(error));
 
+            if (this.isAllProcess == true) {
+              this.isAllProcess = false;
+              this.ProcessAllImage();
+            }
           })
 
     }
@@ -588,86 +757,133 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   }
 
   ProcessRow(saveInfo: any, data: any) {
-    let images = saveInfo.FolderImages;
-    let validImages: any[] = [];
-
-    for (let i = 0; i < images.length; i++) {
-      let row = images[i];
-      let ext = this.getExtention(row.name);
-      if (ext) {
-        let extStr = ext.toString().toLowerCase();
-        if (extStr === ".jpg" || extStr === ".jpeg" || extStr === ".png") {
-          validImages.push(row);
+    try {
+      const folderPath = saveInfo?.FolderPath;
+      if (!folderPath) {
+        this.setStatus(saveInfo, 'Invalid', 'Folder path not found');
+        if (this.isAllProcess == true) {
+          this.isAllProcess = false;
+          this.ProcessAllImage();
         }
+        return;
       }
-    }
 
-    if (typeof alphaNumericSort !== 'undefined') {
-      try {
-        validImages.sort((a, b) => alphaNumericSort(a.name, b.name));
-      } catch (e) {
-        validImages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+      const allFiles = (saveInfo?.FolderImages || []) as any[];
+      const imageNodes = allFiles
+        .filter(x => x && x.isdirective === false)
+        .filter(x => {
+          const ext = (this.getExtention(x.name) || '').toString().toLowerCase();
+          return ext === '.jpg' || ext === '.jpeg' || ext === '.png';
+        })
+        .sort((a, b) => (a?.name || '').toString().localeCompare((b?.name || '').toString(), undefined, { numeric: true, sensitivity: 'base' }));
+
+      if (imageNodes.length === 0) {
+        this.setStatus(saveInfo, 'Invalid', 'No images found');
+        if (this.isAllProcess == true) {
+          this.isAllProcess = false;
+          this.ProcessAllImage();
+        }
+        return;
       }
-    } else {
-      validImages.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
-    }
 
-    let seq = 1;
-    from(validImages).pipe(
-      concatMap((item: any) => {
-        if (this.isCancel) {
-          throw new Error("Cancelled");
-        }
+      // Hydrate/repair log.txt so resume can continue from last uploaded image
+      const existingLog = this.readLogFile(folderPath) || this.logDetail(imageNodes);
+      const logByName = new Map<string, any>();
+      existingLog.forEach(x => {
+        if (x?.Name) logByName.set(String(x.Name), x);
+      });
 
-        let buffer = electronFs.readFileSync(item.path);
-        let file = new File([buffer], item.name, { type: 'image/jpeg' });
+      const normalizedLog: any[] = imageNodes.map((node) => {
+        const name = String(node.name);
+        const prev = logByName.get(name);
+        return {
+          Name: name,
+          Status: prev?.Status || 'Open'
+        };
+      });
 
-        let pageType = "Spread";
-        let nameLower = item.name.toLowerCase();
+      saveInfo.ItemLog = JSON.stringify(normalizedLog);
+      this.log(folderPath, normalizedLog);
 
-        if (/(^|[_\s-])(front[\s_-]?cover|c1)(?=\.)/i.test(nameLower)) {
-          pageType = "FRONT";
-        }
-        else if (/(^|[_\s-])(back[\s_-]?cover|c2)(?=\.)/i.test(nameLower)) {
-          pageType = "BACK";
-        }
-        else if (nameLower.includes("front tp")) {
-          pageType = "TPFRONT";
-        }
-        else if (nameLower.includes("back tp")) {
-          pageType = "TPBACK";
-        }
-        else if (nameLower.includes("emboss")) {
-          pageType = "EMBOSS";
-        }
+      this.setStatus(saveInfo, 'In Progress', '');
 
-        return this.saveImagesObservable(file, seq++, pageType, pageType, saveInfo);
-      })
-    ).subscribe(
-      (res: any) => {
-        // Optional: Update progress here if needed
-      },
-      (err: any) => {
-        console.error(err);
+      const pending = imageNodes
+        .map((node, idx) => ({ node, seq: idx + 1 }))
+        .filter(t => {
+          const entry = normalizedLog.find(x => x.Name === t.node.name);
+          return !entry || entry.Status !== 'Done';
+        });
 
-        if (err?.message !== "Cancelled") {
-          saveInfo.Status = "Invalid";
-          saveInfo.ErrorDetail = err?.message || "Image upload failed";
+      if (pending.length === 0) {
+        this.setStatus(saveInfo, 'Done', '');
+        if (this.isAllProcess == true) {
+          this.isAllProcess = false;
+          this.ProcessAllImage();
         }
+        return;
+      }
 
-        this.isAllProcess = false;
-        this.cdr.detectChanges();
-      },
-      () => {
-        if (!this.isCancel) {
-          saveInfo.Status = "Done";
-          this.cdr.detectChanges();
-          if (this.isAllProcess) {
-            this.ProcessAllImage();
+      from(pending)
+        .pipe(
+          concatMap((task) =>
+            from(this.fileTreeToFile(task.node)).pipe(
+              concatMap((file: File) =>
+                this.saveImagesObservable(
+                  file,
+                  task.seq,
+                  saveInfo?.PageType || 'Spread',
+                  this.getImageTypeFromName(file.name),
+                  saveInfo
+                ).pipe(
+                  // keep progress events for potential UI hooks, but complete only on HttpResponse
+                  filter((event: any) => event instanceof HttpResponse),
+                  map((event: any) => event as HttpResponse<any>),
+                  tap(() => {
+                    const entry = normalizedLog.find(x => x.Name === task.node.name);
+                    if (entry) {
+                      entry.Status = 'Done';
+                    }
+                    saveInfo.ItemLog = JSON.stringify(normalizedLog);
+                    this.log(folderPath, normalizedLog);
+                    const allData = this.allfolderDetail.find(x => x.FolderName == saveInfo.FolderName);
+                    if (allData) {
+                      allData.ItemLog = saveInfo.ItemLog;
+                    }
+                    this.cdr.detectChanges();
+                  }),
+                  retryWhen(this.retryWhenOffline(saveInfo))
+                )
+              )
+            )
+          ),
+          catchError((err) => {
+            // Non-offline errors should mark the folder invalid
+            this.setStatus(saveInfo, 'Invalid', this.normalizeError(err));
+            return throwError(() => err);
+          })
+        )
+        .subscribe({
+          complete: () => {
+            this.setStatus(saveInfo, 'Done', '');
+            if (this.isAllProcess == true) {
+              this.isAllProcess = false;
+              this.ProcessAllImage();
+            }
+          },
+          error: () => {
+            if (this.isAllProcess == true) {
+              this.isAllProcess = false;
+              this.ProcessAllImage();
+            }
           }
-        }
+        });
+    } catch (err) {
+      this.setStatus(saveInfo, 'Invalid', this.normalizeError(err));
+      if (this.isAllProcess == true) {
+        this.isAllProcess = false;
+        this.ProcessAllImage();
       }
-    );
+    }
   }
 
   saveImagesObservable(img: File, seq: number, pageType: any, imageType: any, detail: any): Observable<any> {
@@ -1022,41 +1238,5 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     return "";
   }
 
-
-  getMissingCoverError(files: any[], folderName: string): { message: string } | null {
-    let hasFront = false;
-    let hasBack = false;
-
-    // STRICT matching → prevents C12 / C21 false positives
-    const frontRegex = /(^|[_\s-])(front[\s_-]?cover|c1)(?=\.)/i;
-    const backRegex = /(^|[_\s-])(back[\s_-]?cover|c2)(?=\.)/i;
-
-    if (!Array.isArray(files)) return null;
-
-    for (const f of files) {
-      const name = (f?.name || '').toLowerCase();
-      if (frontRegex.test(name)) hasFront = true;
-      if (backRegex.test(name)) hasBack = true;
-    }
-
-    if (!hasFront && !hasBack)
-      return { message: "Front Cover and Back Cover are mandatory" };
-
-    if (!hasFront)
-      return { message: "Front Cover is mandatory" };
-
-    if (!hasBack)
-      return { message: "Back Cover is mandatory" };
-
-    return null;
-  }
-
-  alertMissingCoversOnce(folderName: string, message: string) {
-    if (this.coverAlertShownForFolder.has(folderName)) {
-      return;
-    }
-    this.coverAlertShownForFolder.add(folderName);
-    alert(message);
-  }
 
 }
