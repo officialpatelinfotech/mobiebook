@@ -3,7 +3,7 @@ import { ElectronService } from 'ngx-electron';
 import { ImagesService } from '../images.service';
 import { FileTree } from '../model/filetree.metadata';
 import { AudioMetaData, FolderDetailMetaData } from '../model/folderdetail.metadata';
-import { from, Observable, BehaviorSubject, Subject, defer, fromEvent, interval, merge, of } from 'rxjs';
+import { from, Observable, BehaviorSubject, Subject, defer, fromEvent, interval, merge, of, throwError } from 'rxjs';
 import { catchError, concatMap, distinctUntilChanged, filter, map, startWith, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 import { AddAlbumMetaData } from '../model/addalbum.metadata';
 import { EalbumService } from '../services/ealbum.service';
@@ -38,10 +38,23 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   private readonly enableUploadDebugLog = true;
   private readonly coverAlertShownForFolder = new Set<string>();
 
+  // ADD: spread limit constant (used only for validation)
+  private readonly MAX_SPREADS = 72;
+
   // Internet-awareness
   private readonly destroy$ = new Subject<void>();
   private readonly online$ = new BehaviorSubject<boolean>(this.isOnlineNow());
   private currentProcessingFolder: FolderDetailMetaData | null = null;
+
+  private isOnlineNow(): boolean {
+    try {
+      const nav: Navigator | undefined = typeof navigator !== 'undefined' ? navigator : undefined;
+      const onLine = (nav as any)?.onLine;
+      return typeof onLine === 'boolean' ? onLine : true;
+    } catch {
+      return true;
+    }
+  }
 
   selectedDirectory: any;
   isDirectiveLoad: boolean = false;
@@ -161,7 +174,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
           );
         }
         // Non-internet error should bubble to preserve existing behavior
-        throw err;
+        return throwError(() => err);
       })
     );
   }
@@ -415,10 +428,10 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     return i;
   }
 
-  getExtention(fileName: string | string[]) {
-    var i = fileName.lastIndexOf('.');
-    if (i === -1) return false;
-    return fileName.slice(i)
+  getExtention(fileName: any): string {
+    const name = Array.isArray(fileName) ? fileName.join('') : (fileName ?? '').toString();
+    const i = name.lastIndexOf('.');
+    return i === -1 ? '' : name.slice(i);
   }
 
   getTxtFilePath(detail: any[]) {
@@ -882,6 +895,29 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     // Track currently processing folder for online/offline status flips
     this.currentProcessingFolder = saveInfo;
 
+    // NEW: spread validation gate (do not change existing ealbum flow; just block early)
+    const spreadCheck = this.validateSpreadLimits(saveInfo?.FolderImages);
+    if (!spreadCheck.ok) {
+      const msg = spreadCheck.message ?? 'Invalid album page/spread configuration';
+      alert(msg);
+
+      saveInfo.Status = "Invalid";
+      saveInfo.ErrorDetail = msg;
+
+      const mirror = this.allfolderDetail.find(x => x.FolderName == saveInfo.FolderName);
+      if (mirror != undefined) {
+        mirror.Status = "Invalid";
+        mirror.ErrorDetail = msg;
+      }
+
+      // keep existing "ALL process" behavior: skip this folder and continue with next Open
+      if (this.isAllProcess == true) {
+        this.isAllProcess = false;
+        this.ProcessAllImage();
+      }
+      return;
+    }
+
     if (this.selectedAudioId <= 0) {
       alert("Please choose audio before process");
       return;
@@ -926,7 +962,20 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
                 this.ProcessRow(saveInfo, data);
               },
               (error: any) => {
-                // non-internet error: keep existing behavior (no reset)
+                const rawMsg =
+                  (error?.error?.message ??
+                    error?.error?.Message ??
+                    error?.message ??
+                    (typeof error?.error === 'string' ? error.error : '')
+                  )?.toString?.() ?? '';
+
+                const isDuplicate = error?.status === 500 && rawMsg.includes('Duplicate entry');
+
+                alert(
+                  isDuplicate
+                    ? 'Mobiebook code already exists. Please use a different code.'
+                    : 'Something went wrong while saving ebook. Please try again.'
+                );
               });
 
           } else {
@@ -963,6 +1012,47 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
         this.ProcessAllImage();
       }
     }
+  }
+
+  private validateSpreadLimits(images: any[]): { ok: boolean; message?: string } {
+    if (!Array.isArray(images)) return { ok: true };
+
+    let frontTP = 0;
+    let backTP = 0;
+    let emboss = 0;
+    let insidePages = 0;
+
+    images.forEach(img => {
+      if (!this.isImageFileName(img?.name)) return;
+
+      const type = this.pageType(img.name);
+
+      if (type === 'TPFRONT') frontTP++;
+      else if (type === 'TPBACK') backTP++;
+      else if (type === 'EMBOSS') emboss++;
+      else if (type === 'PAGE') insidePages++;
+    });
+
+    // Rule 1: inside pages must be EVEN
+    if (insidePages % 2 !== 0) {
+      return {
+        ok: false,
+        message: 'Inside pages count must be even'
+      };
+    }
+
+    const insideSpreads = insidePages / 2;
+    const totalSpreads = insideSpreads + frontTP + backTP + emboss;
+
+    // Rule 2: max 72 spreads
+    if (totalSpreads > this.MAX_SPREADS) {
+      return {
+        ok: false,
+        message: `Maximum ${this.MAX_SPREADS} spreads allowed. Current: ${totalSpreads}`
+      };
+    }
+
+    return { ok: true };
   }
 
   saveImagesObservable(img: File, seq: number, pageType: any, imageType: any, detail: any, uniqid?: string): Observable<any> {
@@ -1020,19 +1110,14 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
 
   log(path: any, data: any) {
-    var logFile = electronFs.createWriteStream(path + '/log.txt', { flags: 'w' });
-    // Or 'w' to truncate the file every time the process starts.
-    var logStdout = process.stdout;
-
+    const logFile = electronFs.createWriteStream(path + '/log.txt', { flags: 'w' });
     setTimeout(() => {
-      let detail = util.format.apply(null, arguments);
       logFile.write(JSON.stringify(data) + '\n');
     }, 1000);
   }
 
 
   readLogText(path: any, itemDetail: any[], name: string) {
-
     let fileExist = this.doesFileExist(path + "/log.txt");
     if (fileExist == true) {
       var rawFile = new XMLHttpRequest();
@@ -1072,7 +1157,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
                 let fold = rows.find(x => x.FolderName == name);
                 if (fold != undefined) {
-                  fold.ItemLog = JSON.stringify(itemDetail);
+                  fold.ItemLog = JSON.stringify(updateRow); // was itemDetail (didn't reflect merged statuses)
                   if (isDone) {
                     fold.Status = "Done";
                   }
