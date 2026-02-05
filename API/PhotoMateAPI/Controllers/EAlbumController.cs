@@ -801,10 +801,9 @@ namespace PhotoMateAPI.Controllers
             }
             finally
             {
-                //clean up memory
-                foreach (System.Drawing.Bitmap image in images)
+                foreach(var img in images)
                 {
-                    image.Dispose();
+                     img.Dispose();
                 }
             }
         }
