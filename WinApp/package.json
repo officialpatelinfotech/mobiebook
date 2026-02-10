@@ -28,8 +28,13 @@
     "directory-tree": "^2.2.7",
     "exceljs": "^4.2.1",
     "file-saver": "^2.0.5",
+    "image-size": "^1.1.1",
+    "jimp": "^1.6.0",
     "ngx-electron": "^2.2.0",
     "pm2": "^6.0.14",
+    "pngjs": "^7.0.0",
+    "bwip-js": "^4.5.1",
+    "qrcode": "^1.5.4",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
     "zone.js": "~0.10.2"

@@ -1,3 +1,11 @@
+
+.qr-replace-btn {
+    padding: 2px 8px;
+    font-size: 10px;
+    line-height: 1.2;
+    width:80px;
+    height:47px;
+}
 /* Premium UI Enhancements */
 
 /* Card Styling */
@@ -41,6 +49,19 @@
 }
 
 /* Button Styling */
+.action-btn-group {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.action-btn-group .Mred-submit-btns,
+.action-btn-group .btn-danger {
+    margin-left: 0 !important;
+}
+
 .Mred-submit-btns {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     border: none;
@@ -74,7 +95,7 @@
     font-weight: 600;
     padding: 10px 25px;
     border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
     transition: all 0.3s ease;
     letter-spacing:0.5px;
 }
@@ -174,6 +195,21 @@ select:focus {
     border-color: #80bdff;
     outline: 0;
     box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* QR Background Modal scrolling */
+.qr-bg-modal-body {
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+}
+
+.qr-bg-preview {
+    max-height: 60vh;
+    overflow: auto;
+    border: 1px solid #ced4da;
+    border-radius: 8px;
+    padding: 8px;
+    background-color: #fff;
 }
 
 .icon-spaces {

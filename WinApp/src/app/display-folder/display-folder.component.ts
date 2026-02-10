@@ -10,6 +10,9 @@ import { EalbumService } from '../services/ealbum.service';
 import { HttpEventType, HttpResponse } from '@angular/common/http';
 import { IMG_TYPE } from '../config/globalvariable';
 import { ExcelExportService } from '../excel-export.service';
+import { LocalStorageService } from '../services/local-storage.service';
+import { PreferencesModalService } from '../services/preferences-modal.service';
+import { GLOBAL_VARIABLE } from '../config/globalvariable';
 
 const Compress = require('client-compress')
 
@@ -20,6 +23,7 @@ declare var $: any;
 const electron = (<any>window).require('electron');
 var remote = electron.remote;
 var electronFs = remote.require('fs');
+var electronPath = remote.require('path');
 var dialog = remote.dialog;
 var util = remote.require('util');
 
@@ -34,6 +38,27 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   images: string[] = [];
   directory: any[] = [];
   currentWatcher: any;
+
+  // QR background modal state
+  qrBgModalOpen: boolean = false;
+  qrBackgroundImageFile: File | null = null;
+  qrBackgroundImagePreviewUrl: string | null = null;
+  qrBackgroundImagePath: string | null = null;
+
+  qrBgTempFile: File | null = null;
+  qrBgTempPreviewUrl: string | null = null;
+  qrBgTempPath: string | null = null;
+
+  // UI helper: display selected image name in modal (avoid native "No file chosen")
+  qrBgSelectedImageName: string | null = null;
+
+  // Preferences: generate barcode under QR (per account)
+  qrGenerateBarcode: boolean = false;
+  qrGenerateBarcodeTemp: boolean = false;
+
+  // Preferences: print folder name below barcode (per account)
+  qrPrintFolderNameBelowBarcode: boolean = false;
+  qrPrintFolderNameBelowBarcodeTemp: boolean = false;
 
   private readonly enableUploadDebugLog = true;
   private readonly coverAlertShownForFolder = new Set<string>();
@@ -73,12 +98,17 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   @ViewChild('mp3File')
   mp3File!: ElementRef;
 
+  @ViewChild('qrBgFileInput')
+  qrBgFileInput!: ElementRef;
+
   constructor(
     private _electronService: ElectronService,
     private imageService: ImagesService,
     private cdr: ChangeDetectorRef,
     private ealbumService: EalbumService,
     private excelExport: ExcelExportService,
+    private localStoreService: LocalStorageService,
+    private preferencesModalService: PreferencesModalService,
     private ngZone: NgZone
   ) {
 
@@ -92,6 +122,14 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.setupInternetAwareness();
     this.getAudioDetail();
+    this.loadSavedQrBgForCurrentUser();
+    this.loadSavedQrBarcodePreference();
+    this.loadSavedQrFolderNameBelowBarcodePreference();
+
+    // Allow opening Preferences modal from the top header.
+    this.preferencesModalService.openPreferences$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.openQrBgModal());
   }
 
   ngOnDestroy() {
@@ -101,6 +139,414 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     if (this.currentWatcher) {
       this.currentWatcher.close();
     }
+  }
+
+  openQrBgModal() {
+    this.qrBgTempFile = this.qrBackgroundImageFile;
+    this.qrBgTempPreviewUrl = this.qrBackgroundImagePreviewUrl;
+    this.qrBgTempPath = this.qrBackgroundImagePath;
+    this.qrBgSelectedImageName = this.deriveQrBgSelectedImageName();
+    this.qrGenerateBarcodeTemp = this.qrGenerateBarcode;
+    this.qrPrintFolderNameBelowBarcodeTemp = this.qrPrintFolderNameBelowBarcode;
+    this.qrBgModalOpen = true;
+  }
+
+  cancelQrBgModal() {
+    // Do not change saved values
+    this.qrBgTempFile = null;
+    this.qrBgTempPreviewUrl = null;
+    this.qrBgTempPath = null;
+    this.qrBgSelectedImageName = this.deriveQrBgSelectedImageName();
+    this.qrGenerateBarcodeTemp = this.qrGenerateBarcode;
+    this.qrPrintFolderNameBelowBarcodeTemp = this.qrPrintFolderNameBelowBarcode;
+    this.qrBgModalOpen = false;
+  }
+
+  private deriveQrBgSelectedImageName(): string | null {
+    try {
+      const f: any = this.qrBgTempFile || this.qrBackgroundImageFile;
+      const nameFromFile = typeof f?.name === 'string' ? String(f.name).trim() : '';
+      if (nameFromFile) return nameFromFile;
+
+      const p = String(this.qrBgTempPath || this.qrBackgroundImagePath || '').trim();
+      if (p) {
+        const last = p.replace(/\\/g, '/').split('/').pop();
+        return last ? String(last) : null;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  replaceQrBgImage() {
+    this.triggerQrBgEdit();
+  }
+
+  removeSelectedQrBgImage() {
+    // Clear current selection in modal; saved value remains until Save is clicked.
+    this.qrBgTempFile = null;
+    this.qrBgTempPreviewUrl = null;
+    this.qrBgTempPath = null;
+    this.qrBgSelectedImageName = null;
+
+    try {
+      const input: any = this.qrBgFileInput?.nativeElement;
+      if (input) {
+        input.value = '';
+      }
+    } catch {
+      // ignore
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  triggerQrBgEdit() {
+    try {
+      const input: any = this.qrBgFileInput?.nativeElement;
+      if (input && typeof input.click === 'function') {
+        input.click();
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  saveQrBgImage() {
+    let savedOk = false;
+    try {
+      // Persist selected image into app-owned storage so it remains available across restarts.
+      // Image is optional: allow saving barcode preferences even if no image is selected.
+      const hasAnyImageInput = !!(this.qrBgTempPath || this.qrBgTempPreviewUrl);
+      let imageSavedOk = !hasAnyImageInput;
+      if (hasAnyImageInput) {
+        const saved = this.persistQrBgToUserData(this.qrBgTempPath, this.qrBgTempPreviewUrl);
+        if (saved?.path) {
+          this.qrBackgroundImagePath = saved.path;
+          this.qrBackgroundImagePreviewUrl = saved.previewDataUrl ?? this.qrBgTempPreviewUrl;
+          this.qrBackgroundImageFile = this.qrBgTempFile;
+          this.localStoreService.setItem(this.getQrBgStorageKey(), saved.path);
+          imageSavedOk = true;
+        } else {
+          // Fallback: if we at least have a DataURL (FileReader), persist that in localStorage.
+          const dataUrl = String(this.qrBgTempPreviewUrl ?? '').trim();
+          if (dataUrl && dataUrl.startsWith('data:image/')) {
+            this.qrBackgroundImagePath = null;
+            this.qrBackgroundImagePreviewUrl = dataUrl;
+            // Avoid keeping a stale path around.
+            try { this.localStoreService.removeByKey(this.getQrBgStorageKey()); } catch { /* ignore */ }
+            imageSavedOk = true;
+          }
+        }
+
+        // Best-effort: also save the DataURL in localStorage (can fail due to quota limits).
+        try {
+          const dataUrlToPersist = String(this.qrBackgroundImagePreviewUrl ?? this.qrBgTempPreviewUrl ?? '').trim();
+          if (dataUrlToPersist && dataUrlToPersist.startsWith('data:image/')) {
+            this.localStoreService.setItem(this.getQrBgDataUrlStorageKey(), dataUrlToPersist);
+          }
+        } catch {
+          // ignore
+        }
+
+        if (!imageSavedOk) {
+          throw new Error('Failed to save QR background image');
+        }
+      }
+
+      // persist barcode preference
+      this.qrGenerateBarcode = !!this.qrGenerateBarcodeTemp;
+      this.localStoreService.setItem(this.getQrBarcodePrefKey(), this.qrGenerateBarcode ? '1' : '0');
+
+      // persist folder-name-below-barcode preference
+      this.qrPrintFolderNameBelowBarcode = !!this.qrPrintFolderNameBelowBarcodeTemp;
+      this.localStoreService.setItem(this.getQrFolderNameBelowBarcodePrefKey(), this.qrPrintFolderNameBelowBarcode ? '1' : '0');
+
+      alert('All Preferences saved successfully');
+      savedOk = true;
+    } catch (e) {
+      console.error('Failed to save QR background image', e);
+      alert('Failed to save image');
+    } finally {
+      // Only close modal on successful save; keep it open on failure so user can retry.
+      if (savedOk) {
+        this.qrBgModalOpen = false;
+      }
+    }
+  }
+
+  onQrBgFileSelected(event: any) {
+    try {
+      const file: File | undefined = event?.target?.files?.[0];
+      if (!file) return;
+
+      // Enforce PNG-only background image selection.
+      const anyFile: any = file as any;
+      const nameForExt = String(anyFile?.path || file?.name || '').trim();
+      const ext = this.getExtention(nameForExt).toLowerCase();
+      if (ext && ext !== '.png') {
+        alert('Please select PNG image only.');
+        this.qrBgTempFile = null;
+        this.qrBgTempPreviewUrl = null;
+        this.qrBgTempPath = null;
+        this.qrBgSelectedImageName = null;
+        try {
+          const input: any = this.qrBgFileInput?.nativeElement;
+          if (input) input.value = '';
+        } catch {
+          // ignore
+        }
+        this.cdr.detectChanges();
+        return;
+      }
+
+      this.qrBgTempFile = file;
+      this.qrBgSelectedImageName = String(file?.name || '').trim() || this.qrBgSelectedImageName;
+
+      // In Electron, File often has a non-standard `path` property. Prefer this for IPC (more reliable than huge DataURLs).
+      const filePath = typeof anyFile?.path === 'string' ? String(anyFile.path) : null;
+      this.qrBgTempPath = filePath;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.qrBgTempPreviewUrl = String(reader.result || '');
+        this.qrBgSelectedImageName = this.qrBgSelectedImageName || this.deriveQrBgSelectedImageName();
+        this.cdr.detectChanges();
+      };
+      reader.onerror = () => {
+        this.qrBgTempPreviewUrl = null;
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      // keep silent to avoid breaking flow
+    }
+  }
+
+  private getCurrentUserIdText(): string {
+    try {
+      const raw = this.localStoreService.getItem(GLOBAL_VARIABLE.LOGIN_DETAIL) ?? localStorage.getItem(GLOBAL_VARIABLE.LOGIN_DETAIL);
+      if (!raw) return 'anonymous';
+      const parsed = JSON.parse(raw);
+      const userId = parsed?.UserId ?? parsed?.userId ?? parsed?.userid;
+      const asText = String(userId ?? '').trim();
+      return asText || 'anonymous';
+    } catch {
+      return 'anonymous';
+    }
+  }
+
+  private getQrBgStorageKey(): string {
+    return `QR_BG_IMAGE_PATH_${this.getCurrentUserIdText()}`;
+  }
+
+  private getQrBgDataUrlStorageKey(): string {
+    return `QR_BG_IMAGE_DATAURL_${this.getCurrentUserIdText()}`;
+  }
+
+  private getQrBarcodePrefKey(): string {
+    return `QR_GENERATE_BARCODE_${this.getCurrentUserIdText()}`;
+  }
+
+  private getQrFolderNameBelowBarcodePrefKey(): string {
+    return `QR_PRINT_FOLDER_NAME_BELOW_BARCODE_${this.getCurrentUserIdText()}`;
+  }
+
+  private loadSavedQrBarcodePreference() {
+    try {
+      const raw = this.localStoreService.getItem(this.getQrBarcodePrefKey());
+      const text = String(raw ?? '').trim().toLowerCase();
+      this.qrGenerateBarcode = text === '1' || text === 'true' || text === 'yes';
+      this.qrGenerateBarcodeTemp = this.qrGenerateBarcode;
+    } catch {
+      this.qrGenerateBarcode = false;
+      this.qrGenerateBarcodeTemp = false;
+    }
+  }
+
+  private loadSavedQrFolderNameBelowBarcodePreference() {
+    try {
+      const raw = this.localStoreService.getItem(this.getQrFolderNameBelowBarcodePrefKey());
+      const text = String(raw ?? '').trim().toLowerCase();
+      this.qrPrintFolderNameBelowBarcode = text === '1' || text === 'true' || text === 'yes';
+      this.qrPrintFolderNameBelowBarcodeTemp = this.qrPrintFolderNameBelowBarcode;
+    } catch {
+      this.qrPrintFolderNameBelowBarcode = false;
+      this.qrPrintFolderNameBelowBarcodeTemp = false;
+    }
+  }
+
+  private getQrBgUserDataDirForUser(userId: string): string {
+    const userDataDir = remote?.app?.getPath ? remote.app.getPath('userData') : null;
+    if (!userDataDir) throw new Error('Electron userData path unavailable');
+    return electronPath.join(userDataDir, 'qr-background', userId);
+  }
+
+  private findSavedQrBgInUserData(userId: string): string | null {
+    try {
+      const dir = this.getQrBgUserDataDirForUser(userId);
+      if (!electronFs?.existsSync || !electronFs.existsSync(dir)) return null;
+      const files: string[] = electronFs.readdirSync(dir) as string[];
+      const match = (files || []).find(f => /^qr-background\.(png|jpe?g|jpe|jfif|webp|gif|bmp|svg)$/i.test(String(f)));
+      return match ? electronPath.join(dir, match) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private loadSavedQrBgForCurrentUser() {
+    try {
+      const userId = this.getCurrentUserIdText();
+      const fromStore = this.localStoreService.getItem(this.getQrBgStorageKey());
+      const candidate = fromStore && electronFs?.existsSync && electronFs.existsSync(fromStore)
+        ? fromStore
+        : this.findSavedQrBgInUserData(userId);
+
+      if (candidate) {
+        this.qrBackgroundImagePath = candidate;
+        this.qrBackgroundImagePreviewUrl = this.filePathToDataUrl(candidate);
+        // Refresh the storage pointer if it was missing/old.
+        this.localStoreService.setItem(this.getQrBgStorageKey(), candidate);
+        this.cdr.detectChanges();
+        return;
+      }
+
+      // Fallback: restore from DataURL saved in localStorage
+      const raw = this.localStoreService.getItem(this.getQrBgDataUrlStorageKey());
+      const dataUrl = String(raw ?? '').trim();
+      if (dataUrl && dataUrl.startsWith('data:image/')) {
+        this.qrBackgroundImagePath = null;
+        this.qrBackgroundImagePreviewUrl = dataUrl;
+        this.cdr.detectChanges();
+      }
+    } catch (e) {
+      console.error('Failed to load saved QR background image', e);
+    }
+  }
+
+  private persistQrBgToUserData(srcPath: string | null, srcDataUrl: string | null): { path: string; previewDataUrl?: string } | null {
+    const userId = this.getCurrentUserIdText();
+    const destDir = this.getQrBgUserDataDirForUser(userId);
+    if (!electronFs.existsSync(destDir)) {
+      electronFs.mkdirSync(destDir, { recursive: true });
+    }
+
+    const ext = this.inferImageExtension(srcPath, srcDataUrl) ?? '.png';
+    const destPath = electronPath.join(destDir, `qr-background${ext}`);
+
+    if (srcPath && electronFs.existsSync(srcPath)) {
+      const samePath = String(srcPath).toLowerCase() === String(destPath).toLowerCase();
+      if (!samePath) {
+        electronFs.copyFileSync(srcPath, destPath);
+      }
+      const preview = this.filePathToDataUrl(destPath);
+      return { path: destPath, previewDataUrl: preview ?? undefined };
+    }
+
+    // Fallback: write from DataURL (when File.path isn't available)
+    if (srcDataUrl && srcDataUrl.startsWith('data:')) {
+      const match = srcDataUrl.match(/^data:([^;]+);base64,(.*)$/);
+      if (!match) throw new Error('Invalid data URL');
+      const base64 = match[2];
+
+      // Avoid relying on global Buffer (can fail in TS builds without node typings)
+      const NodeBuffer = (remote?.require ? remote.require('buffer')?.Buffer : null) || (electron?.remote?.require ? electron.remote.require('buffer')?.Buffer : null);
+      if (!NodeBuffer) throw new Error('Buffer unavailable');
+      const buf = NodeBuffer.from(base64, 'base64');
+
+      electronFs.writeFileSync(destPath, buf);
+      return { path: destPath, previewDataUrl: srcDataUrl };
+    }
+
+    return null;
+  }
+
+  private filePathToDataUrl(filePath: string): string | null {
+    try {
+      const ext = String(electronPath.extname(filePath) || '').toLowerCase();
+      const mime =
+        ext === '.jpg' || ext === '.jpeg' || ext === '.jpe' || ext === '.jfif' ? 'image/jpeg' :
+          ext === '.webp' ? 'image/webp' :
+            ext === '.gif' ? 'image/gif' :
+              ext === '.bmp' ? 'image/bmp' :
+                ext === '.svg' ? 'image/svg+xml' :
+                  'image/png';
+      const buf = electronFs.readFileSync(filePath);
+      const b64 = buf.toString('base64');
+      return `data:${mime};base64,${b64}`;
+    } catch {
+      return null;
+    }
+  }
+
+  private inferImageExtension(srcPath: string | null, srcDataUrl: string | null): string | null {
+    try {
+      if (srcPath) {
+        const ext = String(electronPath.extname(srcPath) || '').trim().toLowerCase();
+        return ext ? ext : null;
+      }
+      if (srcDataUrl && srcDataUrl.startsWith('data:')) {
+        if (srcDataUrl.startsWith('data:image/jpeg')) return '.jpg';
+        if (srcDataUrl.startsWith('data:image/jpg')) return '.jpg';
+        if (srcDataUrl.startsWith('data:image/pjpeg')) return '.jpg';
+        if (srcDataUrl.startsWith('data:image/jfif')) return '.jpg';
+        if (srcDataUrl.startsWith('data:image/webp')) return '.webp';
+        if (srcDataUrl.startsWith('data:image/gif')) return '.gif';
+        if (srcDataUrl.startsWith('data:image/bmp')) return '.bmp';
+        if (srcDataUrl.startsWith('data:image/svg')) return '.svg';
+        if (srcDataUrl.startsWith('data:image/png')) return '.png';
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async getQrBgForFolderMaybeRotated(detail: any): Promise<{ qrBgPath: string | null; qrBgDataUrl: string | null }> {
+    // This helper is invoked right before QR generation.
+    // For now it simply resolves the best available background input (path preferred),
+    // leaving any layout/rotation decisions to the QR generator in the Electron main process.
+    try {
+      // Prefer explicit in-memory selection
+      const directPath = String(this.qrBackgroundImagePath ?? '').trim();
+      if (directPath && electronFs?.existsSync && electronFs.existsSync(directPath)) {
+        const dataUrl = this.qrBackgroundImagePreviewUrl ?? this.filePathToDataUrl(directPath);
+        return { qrBgPath: directPath, qrBgDataUrl: dataUrl ?? null };
+      }
+
+      // If component state didn't have a path (or it went stale), try the persisted setting
+      try {
+        const fromStore = this.localStoreService.getItem(this.getQrBgStorageKey());
+        const candidate = String(fromStore ?? '').trim();
+        if (candidate && electronFs?.existsSync && electronFs.existsSync(candidate)) {
+          const dataUrl = this.qrBackgroundImagePreviewUrl ?? this.filePathToDataUrl(candidate);
+          return { qrBgPath: candidate, qrBgDataUrl: dataUrl ?? null };
+        }
+      } catch {
+        // ignore
+      }
+
+      // Last resort: if we only have a DataURL, pass it through
+      const dataUrlOnly = String(this.qrBackgroundImagePreviewUrl ?? '').trim();
+      if (dataUrlOnly && dataUrlOnly.startsWith('data:')) {
+        return { qrBgPath: null, qrBgDataUrl: dataUrlOnly };
+      }
+
+      // Final fallback: DataURL persisted in localStorage
+      try {
+        const raw = this.localStoreService.getItem(this.getQrBgDataUrlStorageKey());
+        const savedDataUrl = String(raw ?? '').trim();
+        if (savedDataUrl && savedDataUrl.startsWith('data:image/')) {
+          return { qrBgPath: null, qrBgDataUrl: savedDataUrl };
+        }
+      } catch {
+        // ignore
+      }
+    } catch (e) {
+      console.error('Failed to resolve QR background image', e, detail);
+    }
+
+    return { qrBgPath: null, qrBgDataUrl: null };
   }
 
   private setupInternetAwareness() {
@@ -180,9 +626,17 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   }
 
   private setFolderStatus(folder: FolderDetailMetaData, status: string) {
-    folder.Status = status;
+    const folderName = folder?.FolderName;
+    const canonical = folderName ? this.folderDetail?.find(x => x.FolderName === folderName) : null;
 
-    const mirror = this.allfolderDetail?.find(x => x.FolderName === folder.FolderName);
+    // Always update the canonical item (folderDetail) when available.
+    if (canonical) {
+      canonical.Status = status;
+    } else {
+      folder.Status = status;
+    }
+
+    const mirror = folderName ? this.allfolderDetail?.find(x => x.FolderName === folderName) : null;
     if (mirror) mirror.Status = status;
 
     // keep UI in sync
@@ -292,8 +746,8 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     });
 
     if (hasChanges) {
-      let allFolder = JSON.stringify(this.folderDetail);
-      this.allfolderDetail = JSON.parse(allFolder);
+      // Refresh the table without deep-cloning items (keep object identity so status stays consistent)
+      this.allfolderDetail = this.folderDetail.slice();
       this.cdr.detectChanges();
     }
   }
@@ -309,7 +763,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     if (coverErr) {
       let fold = new FolderDetailMetaData();
       fold.FolderName = row.name;
-      fold.PageType = "Spread";
+      fold.PageType = this.inferDefaultAlbumPageType(row.items);
       fold.FolderTextFile = this.getTxtFilePath(row.items);
       fold.IsProcess = false;
       fold.EAlbumId = 0;
@@ -322,15 +776,14 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
       this.alertMissingCoversOnce(row.name, coverErr.message);
 
-      let allFolder = JSON.stringify(this.folderDetail);
-      this.allfolderDetail = JSON.parse(allFolder);
+      this.allfolderDetail = this.folderDetail.slice();
       return;
     }
 
     let orderFile = this.getTxtFilePath(row.items);
     let fold = new FolderDetailMetaData();
     fold.FolderName = row.name;
-    fold.PageType = "Spread";
+    fold.PageType = this.inferDefaultAlbumPageType(row.items);
     fold.FolderTextFile = orderFile;
     fold.IsProcess = false;
     fold.EAlbumId = 0;
@@ -352,8 +805,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       this.readLogText(row.path, itemDetail, row.name)
     }
 
-    let allFolder = JSON.stringify(this.folderDetail);
-    this.allfolderDetail = JSON.parse(allFolder);
+    this.allfolderDetail = this.folderDetail.slice();
   }
 
   browse() {
@@ -642,7 +1094,53 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
           completed = completed + 1;
 
           if (completed >= imageDetail.length) {
-            detail.Status = "Done";
+            this.setFolderStatus(detail, "Done");
+
+            // Generate album QR in Electron MAIN via IPC (do not block or break existing flow)
+            try {
+              const resolvedUniqId =
+                detail?.uniq_id ??
+                detail?.UniqId ??
+                albumDetail?.AlbumDetail?.UniqId ??
+                albumDetail?.UniqId;
+
+              const resolvedUniqIdText = String(resolvedUniqId ?? '').trim();
+              if (!resolvedUniqIdText || resolvedUniqIdText.toLowerCase() === 'null' || resolvedUniqIdText.toLowerCase() === 'undefined') {
+                console.error('QR not generated: uniq id missing/invalid', resolvedUniqId);
+              } else {
+                (async () => {
+                  const bg = await this.getQrBgForFolderMaybeRotated(detail);
+
+                  const payload = {
+                    FolderPath: detail.FolderPath,
+                    uniq_id: resolvedUniqIdText,
+                    qrBgPath: bg.qrBgPath,
+                    qrBgDataUrl: bg.qrBgDataUrl,
+                    generateBarcode: this.qrGenerateBarcode,
+                    barcodeText: String(detail?.FolderName ?? '').trim(),
+                    printFolderNameBelowBarcode: this.qrPrintFolderNameBelowBarcode,
+                    pageType: (detail?.PageType ?? albumDetail?.AlbumDetail?.PageType ?? albumDetail?.PageType)
+                  };
+
+                  if (electron?.ipcRenderer?.invoke) {
+                    electron.ipcRenderer.invoke('generate-qr', payload)
+                      .then((res: any) => {
+                        if (res?.ok) {
+                          console.log('QR generated:', res.outPath, 'URL:', res.url);
+                        } else {
+                          console.error('QR generation failed:', res?.error || res);
+                        }
+                      })
+                      .catch((err: any) => console.error('QR IPC invoke error:', err));
+                  } else {
+                    console.error('ipcRenderer.invoke not available; cannot generate QR');
+                  }
+                })().catch((e: any) => console.error('QR bg rotate/prepare error:', e));
+              }
+            } catch (e) {
+              console.error('QR generation trigger error:', e);
+            }
+
             var allData = this.allfolderDetail.find(x => x.FolderName == detail.FolderName);
             if (allData != undefined) {
               allData.Status = "Done";
@@ -892,23 +1390,22 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   saveEalbumInfo(saveInfo: any) {
     debugger;
 
+    const folderName = String(saveInfo?.FolderName ?? '').trim();
+    const canonical = folderName ? (this.folderDetail.find(x => x.FolderName === folderName) ?? saveInfo) : saveInfo;
+
     // Track currently processing folder for online/offline status flips
-    this.currentProcessingFolder = saveInfo;
+    this.currentProcessingFolder = canonical;
 
     // NEW: spread validation gate (do not change existing ealbum flow; just block early)
-    const spreadCheck = this.validateSpreadLimits(saveInfo?.FolderImages);
+    const spreadCheck = this.validateSpreadLimits(saveInfo?.FolderImages, saveInfo?.PageType);
     if (!spreadCheck.ok) {
       const msg = spreadCheck.message ?? 'Invalid album page/spread configuration';
       alert(msg);
 
-      saveInfo.Status = "Invalid";
-      saveInfo.ErrorDetail = msg;
-
-      const mirror = this.allfolderDetail.find(x => x.FolderName == saveInfo.FolderName);
-      if (mirror != undefined) {
-        mirror.Status = "Invalid";
-        mirror.ErrorDetail = msg;
-      }
+      this.setFolderStatus(canonical, "Invalid");
+      canonical.ErrorDetail = msg;
+      const mirror = folderName ? this.allfolderDetail.find(x => x.FolderName === folderName) : null;
+      if (mirror) mirror.ErrorDetail = msg;
 
       // keep existing "ALL process" behavior: skip this folder and continue with next Open
       if (this.isAllProcess == true) {
@@ -928,14 +1425,14 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
     if (saveInfo.EmailAddress != undefined && saveInfo.EmailAddress != "" && saveInfo.EmailAddress != null) {
       // IMPORTANT: gate API call on internet availability (pause/resume)
-      this.runWhenOnline(saveInfo, () => this.ealbumService.getPhotographerId(saveInfo.EmailAddress.trim()))
+      this.runWhenOnline(canonical, () => this.ealbumService.getPhotographerId(String(saveInfo.EmailAddress).trim()))
         .subscribe((photographerId: any) => {
           if (photographerId > 0) {
-            saveInfo.Status = "In Progress";
+            this.setFolderStatus(canonical, "In Progress");
 
             addAlbum.AlbumId = 0;
             addAlbum.EventTitle = "";
-            addAlbum.CoupleDetail = saveInfo.CoupleName;
+            addAlbum.CoupleDetail = canonical.CoupleName;
             addAlbum.AudioId = this.selectedAudioId;
             if (this.selectedAudioId <= 0) {
               if (this.albums.length > 0) {
@@ -944,22 +1441,19 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
             }
             addAlbum.EventDate = eventDate;
             addAlbum.Remark = "";
-            addAlbum.EmailAddress = saveInfo.EmailAddress;
+            addAlbum.EmailAddress = canonical.EmailAddress;
             addAlbum.MobileNo = "";
-            addAlbum.PageType = saveInfo.PageType;
+            addAlbum.PageType = canonical.PageType;
             addAlbum.PhotographerId = photographerId;
 
-            var allData = this.allfolderDetail.find(x => x.FolderName == saveInfo.FolderName);
-            if (allData != undefined) {
-              allData.Status = "In Progress";
-            }
+            // mirror status already set via setFolderStatus
 
             // Gate album-create API call on internet availability (pause/resume)
-            this.runWhenOnline(saveInfo, () => this.ealbumService.addLabAlbumDetail(addAlbum))
+            this.runWhenOnline(canonical, () => this.ealbumService.addLabAlbumDetail(addAlbum))
               .subscribe((data: any) => {
-                saveInfo.EAlbumId = data.ealbumId;
-                saveInfo.PhotographerId = photographerId;
-                this.ProcessRow(saveInfo, data);
+                canonical.EAlbumId = data.ealbumId;
+                canonical.PhotographerId = photographerId;
+                this.ProcessRow(canonical, data);
               },
               (error: any) => {
                 const rawMsg =
@@ -979,14 +1473,10 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
               });
 
           } else {
-            saveInfo.Status = "Invalid";
-            saveInfo.ErrorDetail = "Invalid photographer email";
-
-            var allData2 = this.allfolderDetail.find(x => x.FolderName == saveInfo.FolderName);
-            if (allData2 != undefined) {
-              allData2.Status = "Invalid";
-              allData2.ErrorDetail = "Invalid photographer email";
-            }
+            this.setFolderStatus(canonical, "Invalid");
+            canonical.ErrorDetail = "Invalid photographer email";
+            const allData2 = folderName ? this.allfolderDetail.find(x => x.FolderName === folderName) : null;
+            if (allData2) allData2.ErrorDetail = "Invalid photographer email";
 
             if (this.isAllProcess == true) {
               this.isAllProcess = false;
@@ -999,13 +1489,10 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
         });
 
     } else {
-      saveInfo.Status = "Invalid";
-      saveInfo.ErrorDetail = "email id not found/incorrect";
-      var allData = this.allfolderDetail.find(x => x.FolderName == saveInfo.FolderName);
-      if (allData != undefined) {
-        allData.Status = "Invalid";
-        allData.ErrorDetail = "email id not found/incorrect";
-      }
+      this.setFolderStatus(canonical, "Invalid");
+      canonical.ErrorDetail = "email id not found/incorrect";
+      const allData = folderName ? this.allfolderDetail.find(x => x.FolderName === folderName) : null;
+      if (allData) allData.ErrorDetail = "email id not found/incorrect";
 
       if (this.isAllProcess == true) {
         this.isAllProcess = false;
@@ -1014,8 +1501,11 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     }
   }
 
-  private validateSpreadLimits(images: any[]): { ok: boolean; message?: string } {
+  private validateSpreadLimits(images: any[], selectedPageType?: any): { ok: boolean; message?: string } {
     if (!Array.isArray(images)) return { ok: true };
+
+    const pageTypeText = String(selectedPageType ?? '').trim().toLowerCase();
+    const isPageMode = pageTypeText === 'page';
 
     let frontTP = 0;
     let backTP = 0;
@@ -1033,8 +1523,8 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       else if (type === 'PAGE') insidePages++;
     });
 
-    // Rule 1: inside pages must be EVEN
-    if (insidePages % 2 !== 0) {
+    // Rule 1: inside pages must be EVEN (only applicable when PageType is "Page")
+    if (isPageMode && (insidePages % 2 !== 0)) {
       return {
         ok: false,
         message: 'Inside pages count must be even'
@@ -1053,6 +1543,53 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     }
 
     return { ok: true };
+  }
+
+  private inferDefaultAlbumPageType(items: any[]): string {
+    // Default behavior historically was Spread. Only switch to Page when we can
+    // confidently determine the folder contains portrait-only images.
+    try {
+      const safeItems = Array.isArray(items) ? items : [];
+      const imageItems = safeItems
+        .filter((it: any) => it && typeof it.name === 'string' && typeof it.path === 'string')
+        .filter((it: any) => this.isImageFileName(it.name))
+        .filter((it: any) => String(it.name).toLowerCase() !== 'album-qr.png');
+
+      if (!imageItems.length) return 'Spread';
+
+      let sizeOf: any;
+      try {
+        sizeOf = (<any>window).require ? (<any>window).require('image-size') : null;
+      } catch {
+        sizeOf = null;
+      }
+      if (!sizeOf) return 'Spread';
+
+      let seenPortrait = false;
+      let seenLandscape = false;
+
+      // Sample a few images for speed; filenames are already validated.
+      const sample = imageItems.slice(0, 8);
+      for (const it of sample) {
+        let dim: any;
+        try {
+          dim = sizeOf(it.path);
+        } catch {
+          continue;
+        }
+        const w = Number(dim?.width);
+        const h = Number(dim?.height);
+        if (!(w > 0 && h > 0)) continue;
+        if (h >= w) seenPortrait = true; else seenLandscape = true;
+        if (seenPortrait && seenLandscape) return 'Spread';
+      }
+
+      if (seenPortrait && !seenLandscape) return 'Page';
+      if (seenLandscape && !seenPortrait) return 'Spread';
+      return 'Spread';
+    } catch {
+      return 'Spread';
+    }
   }
 
   saveImagesObservable(img: File, seq: number, pageType: any, imageType: any, detail: any, uniqid?: string): Observable<any> {
@@ -1307,8 +1844,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
         rowDetail.ErrorDetail = coverErr.message.split('\n')[0];
         this.alertMissingCoversOnce(detail.FolderName, coverErr.message);
 
-        var detailsInvalid = JSON.stringify(this.folderDetail);
-        this.allfolderDetail = JSON.parse(detailsInvalid);
+        this.allfolderDetail = this.folderDetail.slice();
         return;
       }
 
@@ -1321,8 +1857,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       let itemDetail = this.logDetail(fileTree)
       this.readLogText(path, itemDetail, detail.FolderName)
 
-      var details = JSON.stringify(this.folderDetail);
-      this.allfolderDetail = JSON.parse(details);
+      this.allfolderDetail = this.folderDetail.slice();
     }
   }
 

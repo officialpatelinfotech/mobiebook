@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "EYrfsCSvx4aN8vceH6Ko+hHF3y60UL7wUrDaMAP5k94RiCXVfdL+71z/NplO8Xc+beV+Z98cDUX2GLamUkHhbQ==",
+  "dgSpecHash": "7z62vFw81RU6PbDPUNCUOrJ6OdJ5xwfkx19CmdZdfGckw1wY5snacSuPgJAjsIOKD9DUDnqJWKk90Gkax8KIzw==",
   "success": true,
-  "projectFilePath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotoMateAPI\\PhotoMateAPI.csproj",
+  "projectFilePath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotomateAPI\\PhotoMateAPI.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Admin\\.nuget\\packages\\google.protobuf\\3.21.9\\google.protobuf.3.21.9.nupkg.sha512",
     "C:\\Users\\Admin\\.nuget\\packages\\k4os.compression.lz4\\1.3.5\\k4os.compression.lz4.1.3.5.nupkg.sha512",

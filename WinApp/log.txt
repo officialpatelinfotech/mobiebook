@@ -1,0 +1,25 @@
+
+[2026-02-09T09:16:03.834Z] QR generation started | file: album-qr.png | url: https://mobiebook.online/#/?q=MB-TEST-123
+[2026-02-09T09:16:03.964Z] QR generated successfully | file: album-qr.png | page: 1024x768 | qrTarget: 420px
+[2026-02-09T09:26:03.851Z] QR generation started | file: album-qr.png | url: https://api.mobiebook.online/resources/0/0/index.html?id=MB-TEST-123
+[2026-02-09T09:26:03.972Z] QR generated successfully | file: album-qr.png | page: 1024x768 | qrTarget: 420px
+[2026-02-09T09:27:14.454Z] QR generation started | id: MB-TEST-123 | file: album-qr.png | url: https://api.mobiebook.online/resources/0/0/index.html?id=MB-TEST-123
+[2026-02-09T09:27:14.565Z] QR generated successfully | file: album-qr.png | page: 1024x768 | qrTarget: 420px
+[2026-02-09T09:53:50.130Z] QR generation started | id: MB-TEST-123 | file: album-qr.png | url: https://api.mobiebook.online/resources/0/0/index.html?id=MB-TEST-123
+[2026-02-09T09:53:50.462Z] QR generated successfully | file: album-qr.png | page: 1024x768 | qrTarget: 420px
+[2026-02-09T10:01:49.971Z] QR generation started | id: MB-TEST-456 | file: album-qr.png | url: https://api.mobiebook.online/resources/0/0/index.html?id=MB-TEST-456 | bg: path:E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\WinApp\src\assets\img\icon.png
+[2026-02-09T10:01:50.216Z] QR generated successfully | file: album-qr.png | page: 1024x768 | qrTarget: 420px | bg: path:E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\WinApp\src\assets\img\icon.png
+[2026-02-09T10:27:33.444Z] QR generation started | id: MB-TEST-BG-DIAG | file: album-qr.png | url: https://mobiebook.online/#/?q=MB-MB-TEST-BG-DIAG | bg: path:E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\WinApp\src\assets\img\icon.png | bgPathExists:true | bgPathSize:5060 | dataUrlValid:false
+[2026-02-09T10:27:33.701Z] QR generated successfully | file: album-qr.png | page: 1024x768 | qrTarget: 420px | bg: path:E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\WinApp\src\assets\img\icon.png | bgUsed:none
+[2026-02-09T10:28:23.333Z] QR generation started | id: MB-TEST-BG-FIX | file: album-qr.png | url: https://mobiebook.online/#/?q=MB-MB-TEST-BG-FIX | bg: path:E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\WinApp\src\assets\img\icon.png | bgPathExists:true | bgPathSize:5060 | dataUrlValid:false
+[2026-02-09T10:28:23.488Z] QR generation failed | error: [
+  {
+    "code": "invalid_type",
+    "expected": "object",
+    "received": "number",
+    "path": [],
+    "message": "Expected object, received number"
+  }
+]
+[2026-02-09T10:29:04.775Z] QR generation started | id: MB-TEST-BG-FIX2 | file: album-qr.png | url: https://mobiebook.online/#/?q=MB-MB-TEST-BG-FIX2 | bg: path:E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\WinApp\src\assets\img\icon.png | bgPathExists:true | bgPathSize:5060 | dataUrlValid:false
+[2026-02-09T10:29:05.178Z] QR generated successfully | file: album-qr.png | page: 1024x768 | qrTarget: 420px | bg: path:E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\WinApp\src\assets\img\icon.png | bgUsed:path

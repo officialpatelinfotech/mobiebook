@@ -1,7 +1,7 @@
 {
   "format": 1,
   "restore": {
-    "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotoMateAPI\\PhotoMateAPI.csproj": {}
+    "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotomateAPI\\PhotoMateAPI.csproj": {}
   },
   "projects": {
     "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\Photomate.Domain\\Photomate.Domain.csproj": {
@@ -132,14 +132,14 @@
         }
       }
     },
-    "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotoMateAPI\\PhotoMateAPI.csproj": {
+    "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotomateAPI\\PhotoMateAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotoMateAPI\\PhotoMateAPI.csproj",
+        "projectUniqueName": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotomateAPI\\PhotoMateAPI.csproj",
         "projectName": "PhotoMateAPI",
-        "projectPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotoMateAPI\\PhotoMateAPI.csproj",
+        "projectPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotomateAPI\\PhotoMateAPI.csproj",
         "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotoMateAPI\\obj\\",
+        "outputPath": "E:\\Patel Infotech Services\\Mobiebook\\Codebase (MobieBook)\\Code\\API\\PhotomateAPI\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

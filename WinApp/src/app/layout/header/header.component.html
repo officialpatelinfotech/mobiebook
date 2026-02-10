@@ -32,6 +32,11 @@
       <ul class="navbar-nav my-lg-0">
         <li class="nav-item dropdown u-pro show">
           <a class="nav-link dropdown-toggle waves-effect waves-dark profile-pic"
+            aria-haspopup="true" aria-expanded="false" (click)="openPreferences()">
+            <span class="hidden-md-down">Preferences&nbsp;</span> </a>
+        </li>
+        <li class="nav-item dropdown u-pro show">
+          <a class="nav-link dropdown-toggle waves-effect waves-dark profile-pic"
             aria-haspopup="true" aria-expanded="false">
             <span class="hidden-md-down">{{userDetails?.FullName}} &nbsp;</span> </a>
         </li>

@@ -4,15 +4,15 @@
   "main": "main.js",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "test": "ng test",
+    "start": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng serve",
+    "build": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng build",
+    "test": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
     "electron": "electron .",
-    "electron-build": "ng build --prod && electron .",
-    "start:electron": "ng build --base-href ./ && electron .",
-    "electron-prod-build": "electron-packager --out winx64 --overwrite --platform win32 --appname mobiebook . --icon=src\\assets\\img\\icon.ico"
+    "electron-build": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng build --prod && electron .",
+    "start:electron": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng build --base-href ./ && electron .",
+    "electron-prod-build": "node --openssl-legacy-provider node_modules/@angular/cli/bin/ng build --prod --base-href ./ && electron-packager --out winx64 --overwrite --platform win32 --appname mobiebook . --icon=src\\assets\\img\\icon.ico"
   },
   "private": true,
   "dependencies": {
@@ -28,7 +28,13 @@
     "directory-tree": "^2.2.7",
     "exceljs": "^4.2.1",
     "file-saver": "^2.0.5",
+    "image-size": "^1.1.1",
+    "jimp": "^1.6.0",
     "ngx-electron": "^2.2.0",
+    "pm2": "^6.0.14",
+    "pngjs": "^7.0.0",
+    "bwip-js": "^4.5.1",
+    "qrcode": "^1.5.4",
     "rxjs": "~6.6.0",
     "tslib": "^2.0.0",
     "zone.js": "~0.10.2"
