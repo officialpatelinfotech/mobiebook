@@ -62,7 +62,7 @@ namespace PhotoMateAPI.Controllers
         public async Task<IActionResult> LoginUser(LoginUserMetaData loginDetails)
         {
             UserDetailResponse resp = new UserDetailResponse();
-            var userDetail = await this.registerProcess.LoginUser(loginDetails.UserName);
+            var userDetail = await this.registerProcess.LoginUserForAuthentication(loginDetails.UserName, loginDetails.UserPassword);
             if (!string.IsNullOrEmpty(userDetail.UserName))
             {                
                 if (userDetail.Password == loginDetails.UserPassword)
@@ -117,7 +117,7 @@ namespace PhotoMateAPI.Controllers
         public async Task<IActionResult> AdminLoginUser(LoginUserMetaData loginDetails)
         {
             UserDetailResponse resp = new UserDetailResponse();
-            var userDetail = await this.registerProcess.LoginUser(loginDetails.UserName);
+            var userDetail = await this.registerProcess.LoginUserForAuthentication(loginDetails.UserName, loginDetails.UserPassword);
             if (!string.IsNullOrEmpty(userDetail.UserName))
             {
                 if (userDetail.Password == loginDetails.UserPassword)

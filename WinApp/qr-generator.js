@@ -136,17 +136,50 @@ async function generateQrPageWithBackground({ url, outPath, backgroundPath, back
   }
 
   // Use Jimp (v1.x) to decode common image formats (png/jpg/etc)
-  const jimp = require('jimp');
-  const Jimp = jimp.Jimp;
-  const JimpMime = jimp.JimpMime;
+  const { Jimp, JimpMime } = require('jimp');
+
+  function appendBgErrorLog(message, extra) {
+    try {
+      const folder = path.dirname(outPath);
+      const logFile = path.join(folder, 'log.txt');
+      const extraText = extra ? ` | ${extra}` : '';
+      fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] QR bg decode warning | ${message}${extraText}`);
+    } catch {
+      // ignore
+    }
+  }
+
+  function looksLikePng(buffer) {
+    if (!buffer || !Buffer.isBuffer(buffer) || buffer.length < 8) return false;
+    return buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47;
+  }
+
+  function scalePngNearest(srcPng, dstWidth, dstHeight) {
+    const dst = new PNG({ width: dstWidth, height: dstHeight, colorType: 6 });
+    const sw = srcPng.width;
+    const sh = srcPng.height;
+    for (let y = 0; y < dstHeight; y++) {
+      const sy = Math.min(sh - 1, Math.floor((y * sh) / dstHeight));
+      for (let x = 0; x < dstWidth; x++) {
+        const sx = Math.min(sw - 1, Math.floor((x * sw) / dstWidth));
+        const sp = (sw * sy + sx) << 2;
+        const dp = (dstWidth * y + x) << 2;
+        dst.data[dp] = srcPng.data[sp];
+        dst.data[dp + 1] = srcPng.data[sp + 1];
+        dst.data[dp + 2] = srcPng.data[sp + 2];
+        dst.data[dp + 3] = srcPng.data[sp + 3];
+      }
+    }
+    return dst;
+  }
 
   function rotateJimp90CwNoCrop(image) {
-    const srcW = Number(image?.bitmap?.width) || 0;
-    const srcH = Number(image?.bitmap?.height) || 0;
+    const srcW = Number(image?.width) || Number(image?.bitmap?.width) || 0;
+    const srcH = Number(image?.height) || Number(image?.bitmap?.height) || 0;
     if (!(srcW > 0 && srcH > 0)) return image;
 
     // Rotate by 90 degrees clockwise WITHOUT cropping by swapping dimensions.
-    const rotated = new Jimp({ width: srcH, height: srcW, background: 0x00000000 });
+    const rotated = new Jimp({ width: srcH, height: srcW, background: 0 });
     const src = image.bitmap.data;
     const dst = rotated.bitmap.data;
     const dstW = rotated.bitmap.width;
@@ -170,7 +203,62 @@ async function generateQrPageWithBackground({ url, outPath, backgroundPath, back
   let bgImage;
   try {
     bgImage = await Jimp.read(bg.buffer);
-  } catch {
+  } catch (err) {
+    console.error('Jimp.read failed:', err);
+
+    // Fallback 1: try decoding PNG directly (some PNG variants can fail in Jimp but succeed in pngjs)
+    if (looksLikePng(bg.buffer)) {
+      try {
+        const base = PNG.sync.read(bg.buffer);
+        const page = scalePngNearest(base, resolvedPageWidth, resolvedPageHeight);
+
+        // Draw QR on top (black modules, keep background elsewhere)
+        const qr = QRCode.create(url, { errorCorrectionLevel: 'M' });
+        const moduleCount = qr.modules.size;
+        const modules = qr.modules.data;
+        const paddedCount = moduleCount + (QUIET_ZONE_MODULES * 2);
+        const pixelsPerModule = Math.max(1, Math.floor(resolvedQrTargetSize / paddedCount));
+        const qrPixelSize = pixelsPerModule * paddedCount;
+        const offsetX = Math.floor((resolvedPageWidth - qrPixelSize) / 2);
+        const offsetY = Math.floor((resolvedPageHeight - qrPixelSize) / 2);
+
+        for (let r = 0; r < paddedCount; r++) {
+          for (let c = 0; c < paddedCount; c++) {
+            const srcR = r - QUIET_ZONE_MODULES;
+            const srcC = c - QUIET_ZONE_MODULES;
+            const isDark =
+              srcR >= 0 && srcR < moduleCount &&
+              srcC >= 0 && srcC < moduleCount &&
+              modules[srcR * moduleCount + srcC];
+            if (!isDark) continue;
+
+            const startX = offsetX + (c * pixelsPerModule);
+            const startY = offsetY + (r * pixelsPerModule);
+
+            for (let dy = 0; dy < pixelsPerModule; dy++) {
+              for (let dx = 0; dx < pixelsPerModule; dx++) {
+                const x = startX + dx;
+                const y = startY + dy;
+                if (x < 0 || y < 0 || x >= resolvedPageWidth || y >= resolvedPageHeight) continue;
+                const p = (resolvedPageWidth * y + x) << 2;
+                page.data[p] = 0;
+                page.data[p + 1] = 0;
+                page.data[p + 2] = 0;
+                page.data[p + 3] = 255;
+              }
+            }
+          }
+        }
+
+        await writePngToFile(page, outPath);
+        appendBgErrorLog('Jimp.read failed; used pngjs PNG fallback', (err && err.message) ? err.message : String(err));
+        return { used: bg.source === 'path' ? 'path(pngjs)' : 'dataUrl(pngjs)', pageWidth: resolvedPageWidth, pageHeight: resolvedPageHeight, qrPixelSize, offsetX, offsetY };
+      } catch (fallbackErr) {
+        appendBgErrorLog('pngjs PNG fallback failed', (fallbackErr && fallbackErr.message) ? fallbackErr.message : String(fallbackErr));
+      }
+    }
+
+    appendBgErrorLog('Background decode failed; generating transparent page', (err && err.message) ? err.message : String(err));
     // If background can't be decoded, fallback to transparent
     await generateCenteredTransparentQrPage({ url, outPath, pageWidth: resolvedPageWidth, pageHeight: resolvedPageHeight, qrTargetSize: resolvedQrTargetSize });
     return { used: 'none', pageWidth: resolvedPageWidth, pageHeight: resolvedPageHeight };
@@ -179,29 +267,44 @@ async function generateQrPageWithBackground({ url, outPath, backgroundPath, back
   // If the background orientation doesn't match the target page, rotate it 90°.
   // Important: do NOT crop during rotation (we swap dimensions).
   try {
-    const bgW = Number(bgImage?.bitmap?.width) || 0;
-    const bgH = Number(bgImage?.bitmap?.height) || 0;
+    const bgW = Number(bgImage?.width) || Number(bgImage?.bitmap?.width) || 0;
+    const bgH = Number(bgImage?.height) || Number(bgImage?.bitmap?.height) || 0;
     const pageIsLandscape = resolvedPageWidth >= resolvedPageHeight;
     const bgIsLandscape = bgW >= bgH;
     if (bgW > 0 && bgH > 0 && bgW !== bgH && pageIsLandscape !== bgIsLandscape) {
       bgImage = rotateJimp90CwNoCrop(bgImage);
     }
-  } catch {
+  } catch (err) {
+    console.error('Rotation check failed:', err);
     // rotation is best-effort
   }
 
-  // Cover the page (fill entire canvas)
-  bgImage.cover({ w: resolvedPageWidth, h: resolvedPageHeight });
+  // Resize to fill the page (stretch if needed, do not crop)
+  // Jimp v1.x expects { w, h }. Keep a fallback for older builds.
+  try {
+    try {
+      bgImage.resize({ w: resolvedPageWidth, h: resolvedPageHeight });
+    } catch {
+      bgImage.resize({ width: resolvedPageWidth, height: resolvedPageHeight });
+    }
+  } catch (err) {
+    console.error('First resize failed:', err);
+  }
 
-  // In some Jimp builds, cover() can result in off-by-1 sizing due to rounding.
+  // In some Jimp builds, resize() might have rounding issues (uncommon, but safe to keep check).
   // Force exact dimensions so we never leave any unfilled (transparent) edges.
   try {
-    const bw = Number(bgImage?.bitmap?.width) || 0;
-    const bh = Number(bgImage?.bitmap?.height) || 0;
+    const bw = Number(bgImage?.width) || Number(bgImage?.bitmap?.width) || 0;
+    const bh = Number(bgImage?.height) || Number(bgImage?.bitmap?.height) || 0;
     if (bw !== resolvedPageWidth || bh !== resolvedPageHeight) {
-      bgImage.resize({ w: resolvedPageWidth, h: resolvedPageHeight });
+      try {
+        bgImage.resize({ w: resolvedPageWidth, h: resolvedPageHeight });
+      } catch {
+        bgImage.resize({ width: resolvedPageWidth, height: resolvedPageHeight });
+      }
     }
-  } catch {
+  } catch (err) {
+    console.error('Second resize failed:', err);
     // best-effort
   }
 
@@ -499,6 +602,10 @@ async function generateAlbumQr({ FolderPath, uniq_id, qrBgDataUrl, qrBgPath, gen
       qrTargetSize: effectiveQrTargetSize
     });
 
+    // Flag logic:
+    // 1. Barcode requested? -> Render barcode (with or without text based on printFolderNameBelowBarcode)
+    // 2. Barcode NOT requested but Text requested? -> Render text only.
+
     if (generateBarcode) {
       const text = String(barcodeText ?? '').trim();
       if (text) {
@@ -513,6 +620,7 @@ async function generateAlbumQr({ FolderPath, uniq_id, qrBgDataUrl, qrBgPath, gen
         const includeText = !!printFolderNameBelowBarcode;
         const barcodeHeight = Math.max(55, Math.floor(pageHeight * (includeText ? 0.12 : 0.09)));
         const barcodeBuf = await tryRenderBarcodeBuffer(text, barcodeWidth, barcodeHeight, includeText);
+
         if (barcodeBuf) {
           const overlay = PNG.sync.read(barcodeBuf);
 
@@ -534,6 +642,44 @@ async function generateAlbumQr({ FolderPath, uniq_id, qrBgDataUrl, qrBgPath, gen
           // Write final page (QR + barcode)
           await writePngToFile(page, outPath);
         }
+      }
+    } else if (printFolderNameBelowBarcode) {
+      // Just text, no barcode
+      const text = String(barcodeText ?? '').trim();
+      if (text) {
+        const existing = fs.readFileSync(outPath);
+        // We need Jimp to render text easily
+        const { Jimp, JimpMime } = require('jimp');
+
+        const image = await Jimp.read(existing);
+        const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK); // Standard black font
+
+        const pageWidth = Number(image.width) || Number(image.bitmap.width);
+        const pageHeight = Number(image.height) || Number(image.bitmap.height);
+
+        // Measure text width to center it
+        const textWidth = Jimp.measureText(font, text);
+        const textHeight = Jimp.measureTextHeight(font, text, pageWidth);
+
+        const qrBottomY = (bgResult && bgResult.offsetY != null && bgResult.qrPixelSize != null)
+          ? (bgResult.offsetY + bgResult.qrPixelSize)
+          : Math.floor((pageHeight + effectiveQrTargetSize) / 2);
+
+        const margin = 20;
+        const startX = Math.max(0, Math.floor((pageWidth - textWidth) / 2));
+        let startY = qrBottomY + margin;
+
+        if (startY + textHeight > pageHeight) {
+          startY = Math.max(0, pageHeight - textHeight - 8);
+        }
+
+        image.print({ font, x: startX, y: startY, text: text });
+
+        // Save back to disk
+        const buffer = await image.getBuffer(JimpMime.png);
+        const { PNG } = require('pngjs');
+        const finalPage = PNG.sync.read(buffer);
+        await writePngToFile(finalPage, outPath);
       }
     }
 

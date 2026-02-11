@@ -46,6 +46,11 @@ namespace PhotoMateAPI.Controllers
                 throw new UnauthorizedAccessException("Unauthorized: invalid or expired AuthKey");
             }
 
+            if (userDetail.ExpiredOn.HasValue && userDetail.ExpiredOn.Value <= DateTime.UtcNow)
+            {
+                throw new UnauthorizedAccessException("Unauthorized: AuthKey expired");
+            }
+
             return userDetail;
         }
 

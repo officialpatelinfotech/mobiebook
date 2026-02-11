@@ -73,6 +73,13 @@ export class JwtInterceptorService  implements HttpInterceptor {
                 }
 
                 if (error.status === 401) {
+                    try {
+                        localStorage.removeItem(GLOBAL_VARIABLE.TOKEN);
+                        localStorage.removeItem(GLOBAL_VARIABLE.LOGIN_DETAIL);
+                    } catch {
+                        // ignore storage errors
+                    }
+
                     errMsg = errMsg || 'Unauthorized';
                 }
 

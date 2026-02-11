@@ -34,3 +34,7 @@ C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\Ph
 C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.dll
 C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\ref\Photomate.Model.dll
 C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Model\obj\Debug\net5.0\Photomate.Model.pdb
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\_build_tmp\Photomate.Model.deps.json
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\_build_tmp\Photomate.Model.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\_build_tmp\ref\Photomate.Model.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\_build_tmp\Photomate.Model.pdb

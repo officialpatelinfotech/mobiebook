@@ -43,3 +43,7 @@ C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\P
 C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.dll
 C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\ref\Photomate.Domain.dll
 C:\Users\Vikas Yadav\Documents\mobiebook\API\Photomate.Domain\obj\Debug\net5.0\Photomate.Domain.pdb
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\_build_tmp\Photomate.Domain.deps.json
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\_build_tmp\Photomate.Domain.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\_build_tmp\ref\Photomate.Domain.dll
+E:\Patel Infotech Services\Mobiebook\Codebase (MobieBook)\Code\API\_build_tmp\Photomate.Domain.pdb

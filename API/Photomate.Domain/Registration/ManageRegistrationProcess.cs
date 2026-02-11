@@ -70,6 +70,81 @@ namespace Photomate.Registration
             return userDetail;
         }
 
+        public async Task<LoginUserDetailMetaData> LoginUserForAuthentication(string userName, string userPassword)
+        {
+            LoginUserDetailMetaData selected = new LoginUserDetailMetaData();
+            Dictionary<string, MySqlParameter> param = new Dictionary<string, MySqlParameter>();
+
+            param["user_name"] = new MySqlParameter("user_name", userName);
+            var userDetails = this.repo.GetAsync("login_user", param);
+
+            if (userDetails.Tables.Count <= 0 || userDetails.Tables[0].Rows.Count <= 0)
+            {
+                return selected;
+            }
+
+            await Task.Run(() =>
+            {
+                var isEmailLogin = !string.IsNullOrWhiteSpace(userName) && userName.Contains("@");
+
+                LoginUserDetailMetaData first = null;
+                LoginUserDetailMetaData passwordMatch = null;
+                LoginUserDetailMetaData exactUserNamePasswordMatch = null;
+
+                var rows = userDetails.Tables[0];
+                for (var i = 0; i < rows.Rows.Count; i++)
+                {
+                    var candidate = new LoginUserDetailMetaData
+                    {
+                        UserId = rows.Rows[i]["UserId"].ToString().ToInt(),
+                        UserName = rows.Rows[i]["UserName"].ToString(),
+                        FullName = rows.Rows[i]["full_name"].ToString(),
+                        Logo = rows.Rows[i]["business_logo"].ToString(),
+                        Password = rows.Rows[i]["user_password"].ToString(),
+                        UserTypeId = rows.Rows[i]["UserTypeId"].ToString().ToInt(),
+                        UserTypeName = rows.Rows[i]["BusinessType"].ToString(),
+                        SaltPassword = rows.Rows[i]["user_password"].ToString(),
+                        IsWindowApp = rows.Rows[i]["is_window_app"].ToString().ToBool(),
+                    };
+
+                    // If the user is logging in using email, only allow exact email match.
+                    // This prevents selecting a different user when the stored procedure returns phone matches too.
+                    if (isEmailLogin)
+                    {
+                        if (string.IsNullOrWhiteSpace(candidate.UserName)
+                            || !string.Equals(candidate.UserName, userName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (first == null)
+                    {
+                        first = candidate;
+                    }
+
+                    var dbPwd = (candidate.Password ?? string.Empty).Trim();
+                    var inputPwd = (userPassword ?? string.Empty).Trim();
+                    if (!string.IsNullOrEmpty(inputPwd) && string.Equals(dbPwd, inputPwd, StringComparison.Ordinal))
+                    {
+                        if (passwordMatch == null)
+                        {
+                            passwordMatch = candidate;
+                        }
+
+                        if (!string.IsNullOrEmpty(candidate.UserName) && string.Equals(candidate.UserName, userName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            exactUserNamePasswordMatch = candidate;
+                        }
+                    }
+                }
+
+                selected = exactUserNamePasswordMatch ?? passwordMatch ?? first ?? selected;
+            });
+
+            return selected;
+        }
+
         public async Task<string> GetTokenDetail(int userId)
         {
             var couponUinqId = CommonMethod.GetUniqId();

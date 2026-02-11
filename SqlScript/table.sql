@@ -682,7 +682,13 @@ CREATE DEFINER=`mobionline`@`%` PROCEDURE `get_page_detail` (IN `user_typeid` IN
 END$$
 
 CREATE DEFINER=`mobionline`@`%` PROCEDURE `get_photographer_user` (IN `username` VARCHAR(100))  BEGIN
-SELECT register_user_id FROM register_user WHERE user_name = username AND business_type_id  = 1 and isactive = 1;
+SELECT register_user_id
+FROM register_user
+WHERE TRIM(LOWER(user_name)) = TRIM(LOWER(username))
+    AND isactive = 1
+    AND isdeleted = 0
+ORDER BY (business_type_id = 1) DESC, register_user_id DESC
+LIMIT 1;
 END$$
 
 CREATE DEFINER=`mobionline`@`%` PROCEDURE `get_profile_by_id` (IN `register_user_id` INT(11))  BEGIN
@@ -709,7 +715,8 @@ CREATE DEFINER=`mobionline`@`%` PROCEDURE `get_user_detail_by_token` (IN `token`
     u.createdon,u.expireon,r.business_type_id
     from user_activity u
 	INNER JOIN register_user  r on u.user_id = r.register_user_id
-    Where u.uniq_key = token;
+    Where u.uniq_key = token
+      AND (u.expireon IS NULL OR u.expireon > UTC_TIMESTAMP());
 END$$
 
 CREATE DEFINER=`mobionline`@`%` PROCEDURE `get_user_list_by_business` (IN `page_index` INT, IN `page_size` INT, IN `search` VARCHAR(500), IN `business_id` INT(11), OUT `total_record` INT(11))  BEGIN
@@ -756,7 +763,15 @@ CREATE DEFINER=`mobionline`@`%` PROCEDURE `login_user` (IN `user_name` VARCHAR(1
       ON u.business_type_id = m.master_content_id
       LEFT Join user_profile p
       ON u.register_user_id = p.register_user_id
-      WHERE (u.user_name = user_name or p.phone = user_name) AND u.isactive = 1;         
+            WHERE (u.user_name = user_name or p.phone = user_name) AND u.isactive = 1
+            ORDER BY
+                CASE
+                    WHEN u.user_name = user_name THEN 0
+                    WHEN p.phone = user_name THEN 1
+                    ELSE 2
+                END,
+                u.createdon DESC,
+                u.register_user_id DESC;         
 END$$
 
 CREATE DEFINER=`mobionline`@`%` PROCEDURE `new_procedure` (IN `register_user_id` INT(11))  BEGIN

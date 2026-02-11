@@ -1,11 +1,4 @@
-
-.qr-replace-btn {
-    padding: 2px 8px;
-    font-size: 10px;
-    line-height: 1.2;
-    width:80px;
-    height:47px;
-}
+/* .qr-replace-btn removed as it is no longer used */
 /* Premium UI Enhancements */
 
 /* Card Styling */
@@ -97,7 +90,7 @@
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
     transition: all 0.3s ease;
-    letter-spacing:0.5px;
+    letter-spacing: 0.5px;
 }
 
 .btn-danger:hover {
@@ -115,6 +108,24 @@
 .btn-outline-secondary:hover {
     background: #e9ecef;
     color: #212529;
+}
+
+.btn-blue {
+    background: linear-gradient(135deg, #007bff 0%, #00c6ff 100%);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 10px 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+}
+
+.btn-blue:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 123, 255, 0.4);
+    background: linear-gradient(135deg, #00c6ff 0%, #007bff 100%);
 }
 
 /* Table Styling */

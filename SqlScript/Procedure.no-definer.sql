@@ -877,7 +877,13 @@ DELIMITER ;
 DELIMITER $$
 CREATE PROCEDURE `get_photographer_user`(IN `username` VARCHAR(100))
 BEGIN
-SELECT register_user_id FROM register_user WHERE user_name = username AND business_type_id  = 1 and isactive = 1;
+SELECT register_user_id
+FROM register_user
+WHERE TRIM(LOWER(user_name)) = TRIM(LOWER(username))
+    AND isactive = 1
+    AND isdeleted = 0
+ORDER BY (business_type_id = 1) DESC, register_user_id DESC
+LIMIT 1;
 END$$
 DELIMITER ;
 
@@ -914,7 +920,8 @@ BEGIN
     u.createdon,u.expireon,r.business_type_id
     from user_activity u
 	INNER JOIN register_user  r on u.user_id = r.register_user_id
-    Where u.uniq_key = token;
+    Where u.uniq_key = token
+      AND (u.expireon IS NULL OR u.expireon > UTC_TIMESTAMP());
 END$$
 DELIMITER ;
 
@@ -972,7 +979,15 @@ BEGIN
       ON u.business_type_id = m.master_content_id
       LEFT Join user_profile p
       ON u.register_user_id = p.register_user_id
-      WHERE (u.user_name = user_name or p.phone = user_name) AND u.isactive = 1;         
+            WHERE (u.user_name = user_name or p.phone = user_name) AND u.isactive = 1
+            ORDER BY
+                CASE
+                    WHEN u.user_name = user_name THEN 0
+                    WHEN p.phone = user_name THEN 1
+                    ELSE 2
+                END,
+                u.createdon DESC,
+                u.register_user_id DESC;         
 END$$
 DELIMITER ;
 

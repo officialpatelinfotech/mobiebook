@@ -33,8 +33,7 @@
                                                 <button type="submit" class="Mred-submit-btns"
                                                     (click)="ProcessAllImage()" [disabled]="isAllProcess == true">
                                                     Process All</button>
-                                                <button type="submit" class="btn btn-danger"
-                                                    (click)="cancelProcess()">
+                                                <button type="submit" class="btn btn-danger" (click)="cancelProcess()">
                                                     Cancel</button>
                                             </div>
                                         </div>
@@ -116,11 +115,13 @@
                                     </td>
                                     <td class="text-center">
                                         <span *ngIf="f.Status === 'Done'" style="color: green;"> SUCCESS</span>
-                                        <span *ngIf="f.Status === 'Waiting'" style="color: #b26a00;"> WAITING FOR INTERNET</span>
+                                        <span *ngIf="f.Status === 'Waiting'" style="color: #b26a00;"> WAITING FOR
+                                            INTERNET</span>
                                         <span *ngIf="f.Status === 'Invalid'" style="color: red;">
                                             <span style="cursor: pointer;" title="{{f.ErrorDetail}}">FAILED</span>
                                         </span>
-                                        <span *ngIf="f.Status !== 'Done'  && f.Status !== 'Invalid' && f.Status !== 'Waiting'"
+                                        <span
+                                            *ngIf="f.Status !== 'Done'  && f.Status !== 'Invalid' && f.Status !== 'Waiting'"
                                             style="color: gray;"> {{f.Status}}</span>
                                         <span *ngIf="f.Status === 'Invalid'">
                                             <i class="icon-spaces ti-info" (click)="viewMessage(f.ErrorDetail)"></i>
@@ -151,13 +152,12 @@
 </div>
 
 <!-- QR Background Modal (Bootstrap-styled, controlled by Angular) -->
-<div class="modal fade" tabindex="-1" role="dialog" aria-modal="true"
-    [ngClass]="{ 'show d-block': qrBgModalOpen }" [attr.aria-hidden]="!qrBgModalOpen"
-    *ngIf="qrBgModalOpen">
+<div class="modal fade" tabindex="-1" role="dialog" aria-modal="true" [ngClass]="{ 'show d-block': qrBgModalOpen }"
+    [attr.aria-hidden]="!qrBgModalOpen" *ngIf="qrBgModalOpen">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">QR Background Image</h5>
+                <h5 class="modal-title">Preference</h5>
                 <button type="button" class="close" aria-label="Close" (click)="cancelQrBgModal()">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -165,23 +165,27 @@
             <div class="modal-body qr-bg-modal-body">
                 <div class="form-group">
                     <label>Select image</label>
-                    <input #qrBgFileInput type="file" class="d-none" accept=".png,image/png" (change)="onQrBgFileSelected($event)">
+                    <input #qrBgFileInput type="file" class="d-none" accept=".png,image/png"
+                        (change)="onQrBgFileSelected($event)">
 
                     <div class="d-flex align-items-center" style="gap: 10px;">
-                        <div class="form-control" role="button" tabindex="0"
-                            (click)="replaceQrBgImage()" (keydown.enter)="replaceQrBgImage()" (keydown.space)="replaceQrBgImage()"
+                        <div class="form-control" role="button" tabindex="0" (click)="replaceQrBgImage()"
+                            (keydown.enter)="replaceQrBgImage()" (keydown.space)="replaceQrBgImage()"
                             style="display: flex; align-items: center; justify-content: space-between; gap: 10px; cursor: pointer;">
                             <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                                 {{ qrBgSelectedImageName || 'Select image' }}
                             </span>
-                            <button *ngIf="qrBgSelectedImageName" type="button" class="btn btn-link p-0"
-                                (click)="$event.stopPropagation(); removeSelectedQrBgImage()"
-                                title="Remove image" aria-label="Remove image">
-                                &times;
-                            </button>
                         </div>
+                    </div>
 
-                        <button *ngIf="qrBgSelectedImageName" type="button" class="btn btn-xs btn-info qr-replace-btn" (click)="replaceQrBgImage()">Replace Image</button>
+                    <div class="d-flex align-items-center mt-2" *ngIf="qrBgSelectedImageName">
+                        <button type="button" class="btn btn-danger mr-2" (click)="removeSelectedQrBgImage()">Remove
+                            Image</button>
+                        <button type="button" class="btn btn-blue" (click)="replaceQrBgImage()">Replace
+                            Image</button>
+                    </div>
+                    <div class="d-flex align-items-center mt-2" *ngIf="!qrBgSelectedImageName">
+                        <button type="button" class="btn btn-blue" (click)="replaceQrBgImage()">Select Image</button>
                     </div>
                 </div>
 
@@ -196,18 +200,19 @@
                 </ng-template>
 
                 <div class="form-group mt-3">
-                    <label style="display: block; margin-bottom: 6px;">Print Barcode</label>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="qrGenerateBarcode" [(ngModel)]="qrGenerateBarcodeTemp">
+                        <input class="form-check-input" type="checkbox" id="qrGenerateBarcode"
+                            [(ngModel)]="qrGenerateBarcodeTemp">
                         <label class="form-check-label" for="qrGenerateBarcode">
-                            Yes
+                            Print Barcode
                         </label>
                     </div>
 
                     <div class="form-check mt-2">
-                        <input class="form-check-input" type="checkbox" id="qrPrintFolderNameBelowBarcode" [(ngModel)]="qrPrintFolderNameBelowBarcodeTemp" [disabled]="!qrGenerateBarcodeTemp">
+                        <input class="form-check-input" type="checkbox" id="qrPrintFolderNameBelowBarcode"
+                            [(ngModel)]="qrPrintFolderNameBelowBarcodeTemp">
                         <label class="form-check-label" for="qrPrintFolderNameBelowBarcode">
-                            Print folder name below barcode
+                            Print folder name
                         </label>
                     </div>
                 </div>
@@ -220,4 +225,5 @@
         </div>
     </div>
 </div>
-<div class="modal-backdrop fade" [ngClass]="{ 'show': qrBgModalOpen }" *ngIf="qrBgModalOpen" (click)="cancelQrBgModal()"></div>
+<div class="modal-backdrop fade" [ngClass]="{ 'show': qrBgModalOpen }" *ngIf="qrBgModalOpen"
+    (click)="cancelQrBgModal()"></div>

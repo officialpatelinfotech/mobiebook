@@ -169,9 +169,13 @@ namespace PhotoMateAPI.Controllers
             string newFileName = string.Empty;
             var userDetail = await GetUserDetail();
 
-            var albumId = await this.eAlbumProcess.AddAlbumForPhotographer(album, userDetail.UserId);
-            var profileDetails = await this.profileProcess.GetProfileById(album.PhotographerId);
-            var albumDetail = await this.eAlbumProcess.GetEalbumDetail(albumId, album.PhotographerId);
+            // IMPORTANT: In WinApp, albums created from this endpoint must belong to the
+            // currently logged-in user (AuthKey), regardless of any email/photographer mapping.
+            var ownerUserId = userDetail.UserId;
+
+            var albumId = await this.eAlbumProcess.AddAlbumForPhotographer(album, ownerUserId);
+            var profileDetails = await this.profileProcess.GetProfileById(ownerUserId);
+            var albumDetail = await this.eAlbumProcess.GetEalbumDetail(albumId, ownerUserId);
             var detail = new
             {
                 ealbumId = albumId,
@@ -179,7 +183,7 @@ namespace PhotoMateAPI.Controllers
                 AlbumDetail = albumDetail
             };
 
-            var folder = Path.Combine("Resources", album.PhotographerId.ToString(), albumId.ToString());
+            var folder = Path.Combine("Resources", ownerUserId.ToString(), albumId.ToString());
             var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folder);
             if (!Directory.Exists(pathToSave))
             {
