@@ -89,13 +89,6 @@ export class HeaderComponent implements OnInit {
     this.notificationMenu = !this.notificationMenu;
   }
   logout() {
-    // Reset barcode preferences on logout (image background should remain unchanged).
-    const userId = this.getCurrentUserIdText();
-    if (userId && userId !== 'anonymous') {
-      this.localStoreService.removeByKey(this.getQrBarcodePrefKeyForUser(userId));
-      this.localStoreService.removeByKey(this.getQrFolderNameBelowBarcodePrefKeyForUser(userId));
-    }
-
     this.localStoreService.removeByKey(GLOBAL_VARIABLE.LOGIN_DETAIL);
     this.localStoreService.removeByKey(GLOBAL_VARIABLE.TOKEN);    
     this.routingService.routing('/');

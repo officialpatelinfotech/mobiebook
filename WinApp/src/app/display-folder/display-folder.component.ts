@@ -69,8 +69,62 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   private readonly enableUploadDebugLog = true;
   private readonly coverAlertShownForFolder = new Set<string>();
 
+  private readonly NO_PAGES_ERROR = 'No pages found';
+  private noPagesAlertShownForFolder = new Set<string>();
+
   // ADD: spread limit constant (used only for validation)
   private readonly MAX_SPREADS = 72;
+
+  private setFolderErrorDetail(folder: FolderDetailMetaData, errorDetail: string) {
+    const folderName = folder?.FolderName;
+    const canonical = folderName ? this.folderDetail?.find(x => x.FolderName === folderName) : null;
+
+    if (canonical) {
+      canonical.ErrorDetail = errorDetail;
+    } else {
+      folder.ErrorDetail = errorDetail;
+    }
+
+    const mirror = folderName ? this.allfolderDetail?.find(x => x.FolderName === folderName) : null;
+    if (mirror) mirror.ErrorDetail = errorDetail;
+
+    this.cdr.detectChanges();
+  }
+
+  private folderHasInsidePages(folderImages: any[] | undefined | null): boolean {
+    const images = Array.isArray(folderImages) ? folderImages : [];
+    for (const img of images) {
+      if (this.isImageFileName(img?.name)) {
+        const type = this.pageType(img.name);
+        if (type === 'PAGE') return true;
+      }
+    }
+    return false;
+  }
+
+  private markFolderAsNoPagesFailed(folder: FolderDetailMetaData) {
+    // The UI treats Status "Invalid" as FAILED.
+    this.setFolderStatus(folder, 'Invalid');
+    this.setFolderErrorDetail(folder, this.NO_PAGES_ERROR);
+    folder.IsProcess = false;
+  }
+
+  private alertNoPagesFoldersOnce(folderNames: string[]) {
+    const unique = (folderNames || [])
+      .map(x => String(x || '').trim())
+      .filter(Boolean)
+      .filter((name) => !this.noPagesAlertShownForFolder.has(name));
+
+    if (!unique.length) return;
+
+    unique.forEach((name) => this.noPagesAlertShownForFolder.add(name));
+
+    if (unique.length === 1) {
+      alert(`No pages found in the folder:\n\n${unique[0]}`);
+    } else {
+      alert(`No pages found in the following folders:\n\n${unique.join('\n')}`);
+    }
+  }
 
   // Internet-awareness
   private readonly destroy$ = new Subject<void>();
@@ -190,22 +244,85 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   }
 
   removeSelectedQrBgImage() {
-    // Clear current selection in modal; saved value remains until Save is clicked.
+    // Permanently remove the saved QR background for this user (disk + localStorage).
+    this.deleteQrBgEverywhereForCurrentUser();
+
+    // Clear both modal selection and saved state.
     this.qrBgTempFile = null;
     this.qrBgTempPreviewUrl = null;
     this.qrBgTempPath = null;
     this.qrBgSelectedImageName = null;
 
+    this.qrBackgroundImageFile = null;
+    this.qrBackgroundImagePreviewUrl = null;
+    this.qrBackgroundImagePath = null;
+
     try {
       const input: any = this.qrBgFileInput?.nativeElement;
-      if (input) {
-        input.value = '';
-      }
+      if (input) input.value = '';
     } catch {
       // ignore
     }
 
     this.cdr.detectChanges();
+  }
+
+  private deleteQrBgEverywhereForCurrentUser() {
+    // Clears all persisted references + deletes any saved background image file under Electron userData.
+    try {
+      try { this.localStoreService.removeByKey(this.getQrBgStorageKey()); } catch { /* ignore */ }
+      try { this.localStoreService.removeByKey(this.getQrBgDataUrlStorageKey()); } catch { /* ignore */ }
+
+      // Best-effort file cleanup (only available in Electron runtime).
+      if (!electronFs || !electronPath || !remote) return;
+      if (!electronFs.existsSync || !electronFs.readdirSync || !electronFs.unlinkSync) return;
+
+      const userId = this.getCurrentUserIdText();
+
+      // If we have a direct path, try deleting it first.
+      const directPath = String(this.qrBackgroundImagePath || '').trim();
+      if (directPath && electronFs.existsSync(directPath)) {
+        try { electronFs.unlinkSync(directPath); } catch { /* ignore */ }
+      }
+
+      // Also delete any lingering qr-background.* file in the per-user directory.
+      let dir: string | null = null;
+      try {
+        dir = this.getQrBgUserDataDirForUser(userId);
+      } catch {
+        dir = null;
+      }
+
+      if (!dir || !electronFs.existsSync(dir)) return;
+
+      const files: string[] = electronFs.readdirSync(dir) as string[];
+      (files || [])
+        .filter((f) => /^qr-background\.(png|jpe?g|jpe|jfif|webp|gif|bmp|svg)$/i.test(String(f)))
+        .forEach((fileName) => {
+          try {
+            const fullPath = electronPath.join(dir as string, String(fileName));
+            if (electronFs.existsSync(fullPath)) {
+              electronFs.unlinkSync(fullPath);
+            }
+          } catch {
+            // ignore
+          }
+        });
+
+      // Optional: remove folder if it becomes empty.
+      try {
+        if (electronFs.rmdirSync) {
+          const remaining: string[] = electronFs.readdirSync(dir) as string[];
+          if (!remaining || remaining.length === 0) {
+            electronFs.rmdirSync(dir);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    } catch {
+      // ignore - removal should be best-effort and never crash the UI.
+    }
   }
 
   triggerQrBgEdit() {
@@ -718,10 +835,15 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     let files = FileTree.readDir(path);
     let currentFolderNames = this.folderDetail.map(x => x.FolderName);
     let hasChanges = false;
+    const newlyNoPagesFailed: string[] = [];
     files.forEach((row: any) => {
       if (row.isdirective) {
         if (!currentFolderNames.includes(row.name)) {
           this.processSingleFolder(row);
+          const added = this.folderDetail.find(x => x.FolderName === row.name);
+          if (added && added.Status === 'Invalid' && added.ErrorDetail === this.NO_PAGES_ERROR) {
+            newlyNoPagesFailed.push(added.FolderName || row.name);
+          }
           hasChanges = true;
         } else {
           // Update existing folder content
@@ -757,12 +879,32 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
                   this.readText(existingFolder.FolderTextFile, row.name);
                 }
               }
+
+              // No-pages validation (only for otherwise-valid folders)
+              if (existingFolder.Status === 'Open') {
+                const hasPagesNow = this.folderHasInsidePages(existingFolder.FolderImages);
+                if (!hasPagesNow) {
+                  this.markFolderAsNoPagesFailed(existingFolder);
+                  newlyNoPagesFailed.push(existingFolder.FolderName || row.name);
+                }
+              } else if (existingFolder.Status === 'Invalid' && existingFolder.ErrorDetail === this.NO_PAGES_ERROR) {
+                // If previously marked failed due to no pages, restore to Open when pages arrive.
+                const hasPagesNow = this.folderHasInsidePages(existingFolder.FolderImages);
+                if (hasPagesNow) {
+                  existingFolder.Status = 'Open';
+                  existingFolder.ErrorDetail = '';
+                }
+              }
               hasChanges = true;
             }
           }
         }
       }
     });
+
+    if (newlyNoPagesFailed.length) {
+      this.alertNoPagesFoldersOnce(newlyNoPagesFailed);
+    }
 
     if (hasChanges) {
       // Refresh the table without deep-cloning items (keep object identity so status stays consistent)
@@ -823,20 +965,11 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       let itemDetail = this.logDetail(row.items)
       this.readLogText(row.path, itemDetail, row.name);
 
-      // Alert if the NEW folder has no inside pages (non-cover/emboss/TP)
-      let hasPages = false;
-      const images = fold.FolderImages || [];
-      for (const img of images) {
-        if (this.isImageFileName(img?.name)) {
-          const type = this.pageType(img.name);
-          if (type === 'PAGE') {
-            hasPages = true;
-            break;
-          }
-        }
-      }
+      // If the NEW folder has no inside pages, mark it FAILED (Invalid).
+      // Alerting is batched (browse + watcher) to avoid repeated popups.
+      const hasPages = this.folderHasInsidePages(fold.FolderImages);
       if (!hasPages) {
-        alert(`No pages found in folder: ${row.name}`);
+        this.markFolderAsNoPagesFailed(fold);
       }
     }
 
@@ -869,6 +1002,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
         this.directory = [];
         this.folderDetail = [];
+        this.noPagesAlertShownForFolder = new Set<string>();
 
         folderDetail.forEach(x => {
           this.processSingleFolder(x);
@@ -876,29 +1010,12 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
         this.startWatching(this.selectedDirectory);
 
-        // Check for folders missing inside pages (non-cover/emboss/TP)
-        const emptyFolders: string[] = [];
+        // Alert once for folders missing inside pages (only those validated as "no pages").
+        const noPagesFolders = (this.folderDetail || [])
+          .filter(f => f?.Status === 'Invalid' && f?.ErrorDetail === this.NO_PAGES_ERROR)
+          .map(f => f?.FolderName || 'Unknown Folder');
 
-        for (const folder of this.folderDetail) {
-          let hasPages = false;
-          const images = folder.FolderImages || [];
-          for (const img of images) {
-            if (this.isImageFileName(img?.name)) {
-              const type = this.pageType(img.name);
-              if (type === 'PAGE') {
-                hasPages = true;
-                break;
-              }
-            }
-          }
-          if (!hasPages) {
-            emptyFolders.push(folder.FolderName || 'Unknown Folder');
-          }
-        }
-
-        if (emptyFolders.length > 0) {
-          alert(`No pages found in the following folders:\n\n${emptyFolders.join('\n')}`);
-        }
+        this.alertNoPagesFoldersOnce(noPagesFolders);
       });
   }
 
@@ -1286,14 +1403,6 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
             this.currentProcessingFolder = null;
 
             if (this.isAllProcess && !this.isCancel) {
-              this.foldersProcessedInCurrentBatch++;
-              if (this.foldersProcessedInCurrentBatch >= 10) {
-                this.isAllProcess = false;
-                alert("Batch completed (10 folders processed). Click Process again to continue.");
-                this.foldersProcessedInCurrentBatch = 0;
-                return;
-              }
-
               this.isAllProcess = false;
               this.ProcessAllImage(true);
             } else {
@@ -1663,7 +1772,10 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       const imageItems = safeItems
         .filter((it: any) => it && typeof it.name === 'string' && typeof it.path === 'string')
         .filter((it: any) => this.isImageFileName(it.name))
-        .filter((it: any) => String(it.name).toLowerCase() !== 'album-qr.png');
+        .filter((it: any) => {
+          const lower = String(it.name).toLowerCase();
+          return lower !== 'album-qr.png' && lower !== 'qr-code.png';
+        });
 
       if (!imageItems.length) return 'Spread';
 
@@ -1678,9 +1790,8 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       let seenPortrait = false;
       let seenLandscape = false;
 
-      // Sample a few images for speed; filenames are already validated.
-      const sample = imageItems.slice(0, 8);
-      for (const it of sample) {
+      // Scan all images (stop early on mixed orientation).
+      for (const it of imageItems) {
         let dim: any;
         try {
           dim = sizeOf(it.path);

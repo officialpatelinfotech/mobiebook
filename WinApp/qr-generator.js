@@ -7,6 +7,41 @@ const DEFAULT_PAGE_HEIGHT = 768;
 const DEFAULT_QR_TARGET_SIZE = 420; // px
 const QUIET_ZONE_MODULES = 4; // standard QR quiet-zone
 
+// Album QR (album-qr.png) physical sizing
+// Page: 12x18 inches, QR: 2x2 inches
+// Note: PNG is pixel-based; we choose a DPI so inches can be converted to pixels.
+const ALBUM_QR_DPI = 300;
+const ALBUM_QR_PAGE_WIDTH_IN = 12;
+const ALBUM_QR_PAGE_HEIGHT_IN = 18;
+const ALBUM_QR_SIZE_IN = 2;
+
+function inchesToPx(inches, dpi) {
+  const n = Number(inches);
+  const d = Number(dpi);
+  if (!(n > 0) || !(d > 0)) return 0;
+  return Math.max(1, Math.round(n * d));
+}
+
+function scalePngNearest(srcPng, dstWidth, dstHeight) {
+  const { PNG } = require('pngjs');
+  const dst = new PNG({ width: dstWidth, height: dstHeight, colorType: 6 });
+  const sw = srcPng.width;
+  const sh = srcPng.height;
+  for (let y = 0; y < dstHeight; y++) {
+    const sy = Math.min(sh - 1, Math.floor((y * sh) / dstHeight));
+    for (let x = 0; x < dstWidth; x++) {
+      const sx = Math.min(sw - 1, Math.floor((x * sw) / dstWidth));
+      const sp = (sw * sy + sx) << 2;
+      const dp = (dstWidth * y + x) << 2;
+      dst.data[dp] = srcPng.data[sp];
+      dst.data[dp + 1] = srcPng.data[sp + 1];
+      dst.data[dp + 2] = srcPng.data[sp + 2];
+      dst.data[dp + 3] = srcPng.data[sp + 3];
+    }
+  }
+  return dst;
+}
+
 function writePngToFile(png, outPath) {
   return new Promise((resolve, reject) => {
     // Prefer a single-buffer atomic write to avoid leaving a partially-written/corrupt PNG
@@ -32,6 +67,88 @@ function writePngToFile(png, outPath) {
       reject(e);
     }
   });
+}
+
+function sampleDominantBackgroundColor(png) {
+  try {
+    const w = Number(png?.width) || 0;
+    const h = Number(png?.height) || 0;
+    const data = png?.data;
+    if (!(w > 0 && h > 0) || !data) return null;
+
+    const cornerSize = Math.max(8, Math.min(24, Math.floor(Math.min(w, h) * 0.04)));
+
+    const corners = [
+      { x0: 0, y0: 0 },
+      { x0: Math.max(0, w - cornerSize), y0: 0 },
+      { x0: 0, y0: Math.max(0, h - cornerSize) },
+      { x0: Math.max(0, w - cornerSize), y0: Math.max(0, h - cornerSize) }
+    ];
+
+    let rSum = 0;
+    let gSum = 0;
+    let bSum = 0;
+    let count = 0;
+
+    for (const c of corners) {
+      for (let y = c.y0; y < c.y0 + cornerSize; y++) {
+        for (let x = c.x0; x < c.x0 + cornerSize; x++) {
+          const p = (w * y + x) << 2;
+          const a = data[p + 3];
+          if (a === 0) continue;
+          rSum += data[p];
+          gSum += data[p + 1];
+          bSum += data[p + 2];
+          count += 1;
+        }
+      }
+    }
+
+    if (!count) return null;
+    return {
+      r: Math.round(rSum / count),
+      g: Math.round(gSum / count),
+      b: Math.round(bSum / count)
+    };
+  } catch {
+    return null;
+  }
+}
+
+function chromaKeyBackgroundToTransparentInPlace(png, keyColor) {
+  // Removes the dominant background color (typically near-white or near-black) and keeps lines/art.
+  // This produces a transparent template look for *any* selected background.
+  const data = png?.data;
+  const w = Number(png?.width) || 0;
+  const h = Number(png?.height) || 0;
+  if (!(w > 0 && h > 0) || !data || !keyColor) return;
+
+  const kr = Number(keyColor.r) || 0;
+  const kg = Number(keyColor.g) || 0;
+  const kb = Number(keyColor.b) || 0;
+
+  // Threshold is intentionally a bit generous to remove slightly-off whites/blacks.
+  const threshold = 42; // max channel delta
+
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3];
+    if (a === 0) continue;
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const dr = Math.abs(r - kr);
+    const dg = Math.abs(g - kg);
+    const db = Math.abs(b - kb);
+    const maxd = Math.max(dr, dg, db);
+
+    if (maxd <= threshold) {
+      // Background pixel -> transparent
+      data[i + 3] = 0;
+    } else {
+      // Keep template ink/graphics
+      data[i + 3] = 255;
+    }
+  }
 }
 
 async function generateCenteredTransparentQrPage({ url, outPath }) {
@@ -121,7 +238,7 @@ function readBackgroundInput({ backgroundPath, backgroundDataUrl }) {
   return { buffer: null, source: 'none' };
 }
 
-async function generateQrPageWithBackground({ url, outPath, backgroundPath, backgroundDataUrl, pageWidth, pageHeight, qrTargetSize }) {
+async function generateQrPageWithBackground({ url, outPath, backgroundPath, backgroundDataUrl, pageWidth, pageHeight, qrTargetSize, folderOrientation }) {
   const { PNG } = require('pngjs');
 
   const resolvedPageWidth = Number(pageWidth) > 0 ? Number(pageWidth) : DEFAULT_PAGE_WIDTH;
@@ -212,6 +329,10 @@ async function generateQrPageWithBackground({ url, outPath, backgroundPath, back
         const base = PNG.sync.read(bg.buffer);
         const page = scalePngNearest(base, resolvedPageWidth, resolvedPageHeight);
 
+        // Make template background transparent (remove dominant corner color).
+        const key = sampleDominantBackgroundColor(page);
+        chromaKeyBackgroundToTransparentInPlace(page, key);
+
         // Draw QR on top (black modules, keep background elsewhere)
         const qr = QRCode.create(url, { errorCorrectionLevel: 'M' });
         const moduleCount = qr.modules.size;
@@ -264,14 +385,24 @@ async function generateQrPageWithBackground({ url, outPath, backgroundPath, back
     return { used: 'none', pageWidth: resolvedPageWidth, pageHeight: resolvedPageHeight };
   }
 
-  // If the background orientation doesn't match the target page, rotate it 90°.
+  // Rotate background only when folder orientation mismatches background orientation.
+  // This is intentionally based on the folder's image orientation (portrait vs landscape),
+  // not the effective page dimensions (Spread mode can halve width).
   // Important: do NOT crop during rotation (we swap dimensions).
   try {
     const bgW = Number(bgImage?.width) || Number(bgImage?.bitmap?.width) || 0;
     const bgH = Number(bgImage?.height) || Number(bgImage?.bitmap?.height) || 0;
-    const pageIsLandscape = resolvedPageWidth >= resolvedPageHeight;
+    const folderOri = String(folderOrientation ?? '').trim().toLowerCase();
+    const folderIsLandscape = folderOri === 'landscape' ? true : (folderOri === 'portrait' ? false : null);
     const bgIsLandscape = bgW >= bgH;
-    if (bgW > 0 && bgH > 0 && bgW !== bgH && pageIsLandscape !== bgIsLandscape) {
+    const shouldRotate =
+      bgW > 0 && bgH > 0 &&
+      bgW !== bgH &&
+      // only rotate when we know the folder orientation
+      (folderIsLandscape != null) &&
+      (folderIsLandscape !== bgIsLandscape);
+
+    if (shouldRotate) {
       bgImage = rotateJimp90CwNoCrop(bgImage);
     }
   } catch (err) {
@@ -315,6 +446,10 @@ async function generateQrPageWithBackground({ url, outPath, backgroundPath, back
 
   // Copy background pixels
   base.data.copy(page.data, 0, 0, page.data.length);
+
+  // Make template background transparent (remove dominant corner color).
+  const key = sampleDominantBackgroundColor(page);
+  chromaKeyBackgroundToTransparentInPlace(page, key);
 
   // Draw QR on top (black modules, keep background elsewhere)
   const qr = QRCode.create(url, { errorCorrectionLevel: 'M' });
@@ -370,6 +505,7 @@ function listLikelyAlbumImages(folderPath) {
       .filter((name) => {
         const lower = name.toLowerCase();
         if (lower === 'album-qr.png') return false;
+        if (lower === 'qr-code.png') return false;
         if (lower.endsWith('.db')) return false;
         return /\.(jpe?g|png|webp|bmp|gif|tiff?)$/i.test(lower);
       })
@@ -409,9 +545,23 @@ function detectLayoutFromFolderImages(folderPath) {
     } catch {
       continue;
     }
-    const w = Number(dim?.width);
-    const h = Number(dim?.height);
+    let w = Number(dim?.width);
+    let h = Number(dim?.height);
     if (!(w > 0 && h > 0)) continue;
+
+    // Respect EXIF orientation when available.
+    // image-size may return dim.orientation (1..8). Values 5..8 represent 90° rotations.
+    // In those cases, the displayed width/height are effectively swapped.
+    try {
+      const exifOrientation = Number(dim?.orientation);
+      if (exifOrientation >= 5 && exifOrientation <= 8) {
+        const tmp = w;
+        w = h;
+        h = tmp;
+      }
+    } catch {
+      // ignore
+    }
 
     if (firstWidth == null) {
       firstWidth = w;
@@ -420,7 +570,9 @@ function detectLayoutFromFolderImages(folderPath) {
       mixedSizes = true;
     }
 
-    if (h >= w) seenPortrait = true; else seenLandscape = true;
+    // Determine orientation. Treat perfectly square images as neutral so they don't force a "mixed" result.
+    if (h > w) seenPortrait = true;
+    else if (w > h) seenLandscape = true;
     if (seenPortrait && seenLandscape) {
       return { pageWidth: DEFAULT_PAGE_WIDTH, pageHeight: DEFAULT_PAGE_HEIGHT, qrTargetSize: DEFAULT_QR_TARGET_SIZE, reason: 'mixed-orientation' };
     }
@@ -450,26 +602,319 @@ async function tryRenderBarcodeBuffer(text, targetWidth, targetHeight, includeTe
     if (!t) return null;
 
     const bwipjs = require('bwip-js');
-    const jimp = require('jimp');
-    const Jimp = jimp.Jimp;
-    const JimpMime = jimp.JimpMime;
+    const { PNG } = require('pngjs');
 
-    // Generate a Code128 barcode
-    const rawPng = await bwipjs.toBuffer({
-      bcid: 'code128',
-      text: t,
-      scale: 3,
-      height: 12,
-      includetext: !!includeText,
-      textxalign: 'center',
-      textsize: 12,
-      backgroundcolor: 'FFFFFF'
-    });
+    const fillSolid = (png, r, g, b, a) => {
+      for (let i = 0; i < png.data.length; i += 4) {
+        png.data[i] = r;
+        png.data[i + 1] = g;
+        png.data[i + 2] = b;
+        png.data[i + 3] = a;
+      }
+    };
 
-    const barcode = await Jimp.read(rawPng);
-    // Force exact target size to keep layout stable
-    barcode.contain({ w: targetWidth, h: targetHeight });
-    return await barcode.getBuffer(JimpMime.png);
+    const blitOverwrite = (dst, src, startX, startY) => {
+      const dstW = dst.width;
+      const dstH = dst.height;
+      const srcW = src.width;
+      const srcH = src.height;
+      for (let y = 0; y < srcH; y++) {
+        const dy = startY + y;
+        if (dy < 0 || dy >= dstH) continue;
+        for (let x = 0; x < srcW; x++) {
+          const dx = startX + x;
+          if (dx < 0 || dx >= dstW) continue;
+          const sp = (srcW * y + x) << 2;
+          const dp = (dstW * dy + dx) << 2;
+          dst.data[dp] = src.data[sp];
+          dst.data[dp + 1] = src.data[sp + 1];
+          dst.data[dp + 2] = src.data[sp + 2];
+          dst.data[dp + 3] = src.data[sp + 3];
+        }
+      }
+    };
+
+    const targetW = Number(targetWidth) > 0 ? Number(targetWidth) : 0;
+    const targetH = Number(targetHeight) > 0 ? Number(targetHeight) : 0;
+
+    // Generate a Code128 barcode (then scale to the requested size using pngjs).
+    // Important: avoid non-integer scaling (it makes some bars look uneven).
+    // We render at a scale that fits, then only integer-scale and center inside the white box.
+    // Prefer larger scales so short barcode texts still render wide enough.
+    const scaleCandidates = [12, 10, 8, 6, 4, 3, 2, 1];
+    let best = null;
+
+    for (const scale of scaleCandidates) {
+      const rawPng = await bwipjs.toBuffer({
+        bcid: 'code128',
+        text: t,
+        scale,
+        height: 8,
+        // Always suppress human-readable text under the barcode.
+        // Requirement: do not print the raw barcode text like "MB-...".
+        includetext: false,
+        textxalign: 'center',
+        textsize: 10,
+        paddingwidth: 2,
+        paddingheight: 2,
+        backgroundcolor: 'FFFFFF',
+        barcolor: '000000',
+        textcolor: '000000'
+      });
+
+      const parsed = PNG.sync.read(rawPng);
+
+      if (targetW > 0 && targetH > 0) {
+        if (parsed.width <= targetW && parsed.height <= targetH) {
+          best = parsed;
+          break;
+        }
+        // Keep the smallest if nothing fits.
+        best = parsed;
+      } else {
+        // No target box requested.
+        best = parsed;
+        break;
+      }
+    }
+
+    if (!best) return null;
+
+    // If no target specified, return as-is.
+    if (!(targetW > 0 && targetH > 0)) {
+      return PNG.sync.write(best);
+    }
+
+    // Integer scale up proportionally (never non-integer) to keep bars crisp.
+    const scaleUp = Math.max(1, Math.min(Math.floor(targetW / best.width), Math.floor(targetH / best.height)));
+    const scaled = scaleUp === 1 ? best : scalePngNearest(best, best.width * scaleUp, best.height * scaleUp);
+
+    // Center inside fixed-size transparent canvas, then chroma-key out white.
+    const canvas = new PNG({ width: targetW, height: targetH, colorType: 6 });
+    const startX = Math.floor((targetW - scaled.width) / 2);
+    const startY = Math.floor((targetH - scaled.height) / 2);
+    blitOverwrite(canvas, scaled, startX, startY);
+
+    // Remove white background from the barcode image so it stays transparent.
+    for (let i = 0; i < canvas.data.length; i += 4) {
+      const a = canvas.data[i + 3];
+      if (a === 0) continue;
+      const r = canvas.data[i];
+      const g = canvas.data[i + 1];
+      const b = canvas.data[i + 2];
+      if (r >= 250 && g >= 250 && b >= 250) {
+        canvas.data[i + 3] = 0;
+      } else {
+        canvas.data[i + 3] = 255;
+      }
+    }
+
+    return PNG.sync.write(canvas);
+  } catch {
+    return null;
+  }
+}
+
+function renderSimpleTextLabelPng(text, width, height) {
+  const { PNG } = require('pngjs');
+  const w = Math.max(1, Number(width) | 0);
+  const h = Math.max(1, Number(height) | 0);
+  const png = new PNG({ width: w, height: h, colorType: 6 });
+  // Transparent background; only draw text pixels.
+  // (Matches the "template" look where the page background is transparent.)
+  // png.data starts as 0-filled => fully transparent.
+
+  const font = {
+    // 5x7 glyphs, '1' means filled pixel
+    '0': ['01110', '10001', '10011', '10101', '11001', '10001', '01110'],
+    '1': ['00100', '01100', '00100', '00100', '00100', '00100', '01110'],
+    '2': ['01110', '10001', '00001', '00010', '00100', '01000', '11111'],
+    '3': ['11110', '00001', '00001', '01110', '00001', '00001', '11110'],
+    '4': ['00010', '00110', '01010', '10010', '11111', '00010', '00010'],
+    '5': ['11111', '10000', '10000', '11110', '00001', '00001', '11110'],
+    '6': ['00110', '01000', '10000', '11110', '10001', '10001', '01110'],
+    '7': ['11111', '00001', '00010', '00100', '01000', '01000', '01000'],
+    '8': ['01110', '10001', '10001', '01110', '10001', '10001', '01110'],
+    '9': ['01110', '10001', '10001', '01111', '00001', '00010', '01100'],
+    'A': ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+    'B': ['11110', '10001', '10001', '11110', '10001', '10001', '11110'],
+    'C': ['01111', '10000', '10000', '10000', '10000', '10000', '01111'],
+    'D': ['11110', '10001', '10001', '10001', '10001', '10001', '11110'],
+    'E': ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+    'F': ['11111', '10000', '10000', '11110', '10000', '10000', '10000'],
+    'G': ['01111', '10000', '10000', '10111', '10001', '10001', '01111'],
+    'H': ['10001', '10001', '10001', '11111', '10001', '10001', '10001'],
+    'I': ['01110', '00100', '00100', '00100', '00100', '00100', '01110'],
+    'J': ['00001', '00001', '00001', '00001', '10001', '10001', '01110'],
+    'K': ['10001', '10010', '10100', '11000', '10100', '10010', '10001'],
+    'L': ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
+    'M': ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+    'N': ['10001', '11001', '10101', '10011', '10001', '10001', '10001'],
+    'O': ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+    'P': ['11110', '10001', '10001', '11110', '10000', '10000', '10000'],
+    'Q': ['01110', '10001', '10001', '10001', '10101', '10010', '01101'],
+    'R': ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
+    'S': ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
+    'T': ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
+    'U': ['10001', '10001', '10001', '10001', '10001', '10001', '01110'],
+    'V': ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+    'W': ['10001', '10001', '10001', '10101', '10101', '11011', '10001'],
+    'X': ['10001', '10001', '01010', '00100', '01010', '10001', '10001'],
+    'Y': ['10001', '10001', '01010', '00100', '00100', '00100', '00100'],
+    'Z': ['11111', '00001', '00010', '00100', '01000', '10000', '11111'],
+    '-': ['00000', '00000', '00000', '11111', '00000', '00000', '00000'],
+    '_': ['00000', '00000', '00000', '00000', '00000', '00000', '11111'],
+    ':': ['00000', '00100', '00100', '00000', '00100', '00100', '00000'],
+    ' ': ['00000', '00000', '00000', '00000', '00000', '00000', '00000'],
+    '?': ['01110', '10001', '00001', '00010', '00100', '00000', '00100']
+  };
+
+  const raw = String(text ?? '').trim();
+  if (!raw) return png;
+
+  const upper = raw.toUpperCase();
+  const glyphW = 5;
+  const glyphH = 7;
+  const padX = Math.max(4, Math.floor(w * 0.03));
+  const padY = Math.max(4, Math.floor(h * 0.10));
+
+  const maxScaleY = Math.max(1, Math.floor((h - padY * 2) / glyphH));
+  let scale = maxScaleY;
+
+  function textPixelWidth(scaleValue, textValue) {
+    // 1px spacing between glyphs
+    return textValue.length * (glyphW * scaleValue) + Math.max(0, (textValue.length - 1) * scaleValue);
+  }
+
+  let toDraw = upper;
+  while (scale > 1 && (textPixelWidth(scale, toDraw) > (w - padX * 2))) {
+    scale -= 1;
+  }
+
+  // If still too wide, truncate and add '...'
+  if (textPixelWidth(scale, toDraw) > (w - padX * 2)) {
+    const ell = '...';
+    const available = w - padX * 2;
+    let base = toDraw;
+    while (base.length > 0 && textPixelWidth(scale, base + ell) > available) {
+      base = base.slice(0, -1);
+    }
+    toDraw = (base.length ? (base + ell) : ell);
+  }
+
+  const textW = textPixelWidth(scale, toDraw);
+  const startX = Math.max(0, Math.floor((w - textW) / 2));
+  const startY = Math.max(0, Math.floor((h - (glyphH * scale)) / 2));
+
+  const setPixel = (x, y) => {
+    if (x < 0 || y < 0 || x >= w || y >= h) return;
+    const p = (w * y + x) << 2;
+    png.data[p] = 0;
+    png.data[p + 1] = 0;
+    png.data[p + 2] = 0;
+    png.data[p + 3] = 255;
+  };
+
+  let cursorX = startX;
+  for (let i = 0; i < toDraw.length; i++) {
+    const ch = toDraw[i];
+    const g = font[ch] || font['?'];
+    for (let gy = 0; gy < glyphH; gy++) {
+      const row = g[gy];
+      for (let gx = 0; gx < glyphW; gx++) {
+        if (row[gx] !== '1') continue;
+        const px0 = cursorX + gx * scale;
+        const py0 = startY + gy * scale;
+        for (let sy = 0; sy < scale; sy++) {
+          for (let sx = 0; sx < scale; sx++) {
+            setPixel(px0 + sx, py0 + sy);
+          }
+        }
+      }
+    }
+    cursorX += (glyphW * scale) + scale;
+  }
+
+  return png;
+}
+
+function tryReadOrderFormText(folderPath) {
+  try {
+    const candidate = path.join(folderPath, 'sample order form.txt');
+    if (fs.existsSync(candidate)) {
+      return fs.readFileSync(candidate, 'utf8');
+    }
+
+    // Case-insensitive fallback (Windows is typically case-insensitive, but keep safe)
+    const entries = fs.readdirSync(folderPath);
+    const match = (entries || []).find((n) => String(n || '').trim().toLowerCase() === 'sample order form.txt');
+    if (match) {
+      return fs.readFileSync(path.join(folderPath, match), 'utf8');
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function parseOrderFormDetails(text) {
+  const raw = String(text ?? '');
+  if (!raw.trim()) return { coupleName: '', studioName: '' };
+
+  const lines = raw.split(/\r?\n/).map((l) => String(l ?? '').trim()).filter(Boolean);
+  const findValue = (re) => {
+    for (const l of lines) {
+      const m = l.match(re);
+      if (m && m[1]) return String(m[1]).trim();
+    }
+    return '';
+  };
+
+  const coupleName =
+    findValue(/couple\s*name\s*[:\-]\s*(.+)$/i) ||
+    findValue(/client\s*name\s*[:\-]\s*(.+)$/i) ||
+    '';
+
+  const studioName =
+    findValue(/studio\s*name\s*[:\-]\s*(.+)$/i) ||
+    findValue(/studio\s*[:\-]\s*(.+)$/i) ||
+    '';
+
+  // If couple name isn't explicitly present, try constructing from Bride/Groom.
+  if (!coupleName) {
+    const bride = findValue(/bride\s*name\s*[:\-]\s*(.+)$/i);
+    const groom = findValue(/groom\s*name\s*[:\-]\s*(.+)$/i);
+    const constructed = [bride, groom].filter(Boolean).join(' & ');
+    return { coupleName: constructed, studioName };
+  }
+
+  return { coupleName, studioName };
+}
+
+async function tryRenderTextLabelBuffer(text, targetWidth, targetHeight) {
+  try {
+    const t = String(text ?? '').trim();
+    if (!t) return null;
+    const { PNG } = require('pngjs');
+    const w = Number(targetWidth) > 0 ? Number(targetWidth) : 320;
+    const h = Number(targetHeight) > 0 ? Number(targetHeight) : 80;
+    const label = renderSimpleTextLabelPng(t, w, h);
+    return PNG.sync.write(label);
+  } catch {
+    return null;
+  }
+}
+
+async function tryRenderFolderNameLabelBuffer(text, targetWidth, targetHeight) {
+  try {
+    const t = String(text ?? '').trim();
+    if (!t) return null;
+
+    const { PNG } = require('pngjs');
+    const w = Number(targetWidth) > 0 ? Number(targetWidth) : 320;
+    const h = Number(targetHeight) > 0 ? Number(targetHeight) : 80;
+    const label = renderSimpleTextLabelPng(t, w, h);
+    return PNG.sync.write(label);
   } catch {
     return null;
   }
@@ -528,29 +973,38 @@ async function generateAlbumQr({ FolderPath, uniq_id, qrBgDataUrl, qrBgPath, gen
 
   const logFile = path.join(FolderPath, 'log.txt');
   const outPath = path.join(FolderPath, 'album-qr.png');
+  const qrOnlyOutPath = path.join(FolderPath, 'qr-code.png');
   const url = `http://localhost:4200/#/?q=${resolvedUniqIdText}`;
+
+  // Read couple/studio from order form (best-effort)
+  const orderFormText = tryReadOrderFormText(FolderPath);
+  const orderDetails = parseOrderFormDetails(orderFormText);
 
   const layout = detectLayoutFromFolderImages(FolderPath);
 
+  // Force album-qr.png / qr-code.png physical size based on folder orientation:
+  // - Portrait folders => 12x18 inches
+  // - Landscape folders => 18x12 inches
+  // (Use DPI to derive pixel dimensions.)
+  const requestedOrientation = String(layout?.orientation ?? '').trim().toLowerCase();
+  const isLandscapeFolder = requestedOrientation === 'landscape';
+  const pageWidthIn = isLandscapeFolder ? ALBUM_QR_PAGE_HEIGHT_IN : ALBUM_QR_PAGE_WIDTH_IN;
+  const pageHeightIn = isLandscapeFolder ? ALBUM_QR_PAGE_WIDTH_IN : ALBUM_QR_PAGE_HEIGHT_IN;
+
+  const effectivePageWidth = inchesToPx(pageWidthIn, ALBUM_QR_DPI);
+  const effectivePageHeight = inchesToPx(pageHeightIn, ALBUM_QR_DPI);
+  const effectiveQrTargetSize = inchesToPx(ALBUM_QR_SIZE_IN, ALBUM_QR_DPI);
+
   const pageTypeText = String(pageType ?? '').trim().toLowerCase();
-  const isSpreadMode = pageTypeText === 'spread';
-
-  // When PageType is Spread, the QR should be created at HALF the spread size (single-page size).
-  // However, for portrait folders the detected layout is already a single page (portrait WxH),
-  // so we should NOT halve the width again.
   const layoutOrientation = String(layout?.orientation ?? '').trim().toLowerCase();
-  const shouldHalfWidthForSpread = isSpreadMode && layoutOrientation === 'landscape';
+  // Background rotation should follow the folder images only (uniform portrait/landscape).
+  // Do NOT infer orientation from pageType; that can rotate incorrectly for mixed/unknown folders.
+  const folderOrientationForBg =
+    (layoutOrientation === 'portrait' || layoutOrientation === 'landscape')
+      ? layoutOrientation
+      : '';
 
-  const effectivePageWidth = (shouldHalfWidthForSpread && Number(layout.pageWidth) > 1)
-    ? Math.max(1, Math.floor(Number(layout.pageWidth) / 2))
-    : Number(layout.pageWidth);
-  const effectivePageHeight = Number(layout.pageHeight);
-
-  const effectiveMinSide = Math.min(effectivePageWidth, effectivePageHeight);
-  const effectiveQrTargetSize = Math.max(
-    220,
-    Math.min(Math.floor(effectiveMinSide * 0.45), Math.floor(effectiveMinSide - 40))
-  );
+  // Note: We still use layout only for orientation hints and diagnostics.
 
   const bgPathText = typeof qrBgPath === 'string' ? qrBgPath.trim() : '';
   const hasBgPath = !!bgPathText;
@@ -582,7 +1036,7 @@ async function generateAlbumQr({ FolderPath, uniq_id, qrBgDataUrl, qrBgPath, gen
   try {
     fs.appendFileSync(
       logFile,
-      `\n[${new Date().toISOString()}] QR generation started | id: ${resolvedUniqIdText} | file: ${outPath} | url: ${url} | bg: ${bgInfo} | bgPathExists:${bgPathExists} | bgPathSize:${bgPathSize} | dataUrlValid:${dataUrlLooksValid} | pageType:${pageTypeText || 'unknown'} | page:${effectivePageWidth}x${effectivePageHeight} | qrTarget:${effectiveQrTargetSize} | layoutReason:${layout.reason}`
+      `\n[${new Date().toISOString()}] QR generation started | id: ${resolvedUniqIdText} | file: ${outPath} | url: ${url} | bg: ${bgInfo} | bgPathExists:${bgPathExists} | bgPathSize:${bgPathSize} | dataUrlValid:${dataUrlLooksValid} | pageType:${pageTypeText || 'unknown'} | page:${effectivePageWidth}x${effectivePageHeight}@${ALBUM_QR_DPI}dpi(${pageWidthIn}x${pageHeightIn}in) | qrTarget:${effectiveQrTargetSize}(${ALBUM_QR_SIZE_IN}in) | layoutReason:${layout.reason} | layoutOri:${layoutOrientation || 'unknown'} | folderOriForBg:${folderOrientationForBg || 'unknown'} | generateBarcode:${!!generateBarcode} | printFolderName:${!!printFolderNameBelowBarcode} | barcodeTextLen:${String(barcodeText ?? '').trim().length}`
     );
   } catch (_) {
     // ignore logging errors
@@ -592,6 +1046,31 @@ async function generateAlbumQr({ FolderPath, uniq_id, qrBgDataUrl, qrBgPath, gen
     // Overwrites album-qr.png if it already exists
     const { PNG } = require('pngjs');
 
+    // Generate QR-only transparent page (no background) as qr-code.png
+    // Page: 12x18 inches, QR: 2x2 inches, centered.
+    try {
+      await generateCenteredTransparentQrPage({
+        url,
+        outPath: qrOnlyOutPath,
+        pageWidth: effectivePageWidth,
+        pageHeight: effectivePageHeight,
+        qrTargetSize: effectiveQrTargetSize
+      });
+      try {
+        fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] QR-only generated | file: ${qrOnlyOutPath} | page: ${effectivePageWidth}x${effectivePageHeight} | qrTarget: ${effectiveQrTargetSize}px`);
+      } catch (_) {
+        // ignore
+      }
+    } catch (e) {
+      // Do not fail the whole operation if the secondary image fails.
+      try {
+        const msg = e && e.message ? e.message : String(e);
+        fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] QR-only generation failed | file: ${qrOnlyOutPath} | error: ${msg}`);
+      } catch (_) {
+        // ignore
+      }
+    }
+
     const bgResult = await generateQrPageWithBackground({
       url,
       outPath,
@@ -599,87 +1078,188 @@ async function generateAlbumQr({ FolderPath, uniq_id, qrBgDataUrl, qrBgPath, gen
       backgroundDataUrl: qrBgDataUrl,
       pageWidth: effectivePageWidth,
       pageHeight: effectivePageHeight,
-      qrTargetSize: effectiveQrTargetSize
+      qrTargetSize: effectiveQrTargetSize,
+      folderOrientation: folderOrientationForBg
     });
 
-    // Flag logic:
-    // 1. Barcode requested? -> Render barcode (with or without text based on printFolderNameBelowBarcode)
-    // 2. Barcode NOT requested but Text requested? -> Render text only.
+    // Overlay logic:
+    // Sequence requested:
+    // QR (already drawn) -> couple name -> studio name -> (optional) barcode -> (optional) JobId:FolderName
+    const wantBarcode = !!generateBarcode;
+    const wantFolderName = !!printFolderNameBelowBarcode;
+    const text = String(barcodeText ?? '').trim();
 
-    if (generateBarcode) {
-      const text = String(barcodeText ?? '').trim();
-      if (text) {
-        // Read the generated QR page and overlay barcode under QR.
-        const existing = fs.readFileSync(outPath);
-        const page = PNG.sync.read(existing);
+    const hasCouple = String(orderDetails?.coupleName ?? '').trim().length > 0;
+    const hasStudio = String(orderDetails?.studioName ?? '').trim().length > 0;
+    const hasAnyOverlays = hasCouple || hasStudio || wantBarcode || wantFolderName;
 
-        const pageWidth = page.width || layout.pageWidth || DEFAULT_PAGE_WIDTH;
-        const pageHeight = page.height || layout.pageHeight || DEFAULT_PAGE_HEIGHT;
+    if (hasAnyOverlays) {
+      const existing = fs.readFileSync(outPath);
+      const page = PNG.sync.read(existing);
 
-        const barcodeWidth = Math.max(220, Math.floor(pageWidth * 0.55));
-        const includeText = !!printFolderNameBelowBarcode;
-        const barcodeHeight = Math.max(55, Math.floor(pageHeight * (includeText ? 0.12 : 0.09)));
-        const barcodeBuf = await tryRenderBarcodeBuffer(text, barcodeWidth, barcodeHeight, includeText);
+      const pageWidth = page.width || layout.pageWidth || DEFAULT_PAGE_WIDTH;
+      const pageHeight = page.height || layout.pageHeight || DEFAULT_PAGE_HEIGHT;
 
-        if (barcodeBuf) {
-          const overlay = PNG.sync.read(barcodeBuf);
+      const qrBottomY = (bgResult && bgResult.offsetY != null && bgResult.qrPixelSize != null)
+        ? (bgResult.offsetY + bgResult.qrPixelSize)
+        : Math.floor((pageHeight + effectiveQrTargetSize) / 2);
 
-          // Position: centered, directly below the QR
-          const margin = 18;
-          const qrBottomY = (bgResult && bgResult.offsetY != null && bgResult.qrPixelSize != null)
-            ? (bgResult.offsetY + bgResult.qrPixelSize)
-            : Math.floor((pageHeight + effectiveQrTargetSize) / 2);
+      // Start overlays immediately on the next line below the QR.
+      // (Use a small, DPI-scaled gap so the first text sits right under the QR.)
+      const gap = Math.max(8, inchesToPx(0.08, ALBUM_QR_DPI));
+      const marginBelowQr = gap;
 
-          const startX = Math.floor((pageWidth - overlay.width) / 2);
-          let startY = qrBottomY + margin;
-          if (startY + overlay.height > pageHeight) {
-            // Clamp to fit
-            startY = Math.max(0, pageHeight - overlay.height - 8);
+      const overlaysTop = [];
+      const overlaysBottom = [];
+
+      // Use identical box size for barcode + folder-name label so the white background looks consistent.
+      const qrBoxWidth = (bgResult && Number(bgResult.qrPixelSize) > 0) ? Number(bgResult.qrPixelSize) : effectiveQrTargetSize;
+      const overlayBoxWidth = Math.max(120, Math.min(pageWidth, Math.floor(qrBoxWidth)));
+
+      // Barcode should be wider than the QR/text labels for better scan reliability.
+      // Target ~10 inches wide (clamped to page width with margins).
+      const sideMargin = Math.max(24, inchesToPx(0.5, ALBUM_QR_DPI));
+      const maxBarcodeWidth = Math.max(1, pageWidth - (sideMargin * 2));
+      const barcodeBoxWidth = Math.min(maxBarcodeWidth, Math.max(overlayBoxWidth, inchesToPx(10, ALBUM_QR_DPI)));
+
+      const textLineHeight = Math.max(60, inchesToPx(0.35, ALBUM_QR_DPI));
+      const barcodeBoxHeight = Math.max(90, inchesToPx(0.45, ALBUM_QR_DPI));
+
+      // Couple name (line 1)
+      if (hasCouple) {
+        const coupleText = String(orderDetails.coupleName).trim();
+        const coupleBuf = await tryRenderTextLabelBuffer(coupleText, overlayBoxWidth, textLineHeight);
+        try {
+          fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] Couple label buffer | ok:${!!coupleBuf} | len:${coupleBuf ? coupleBuf.length : 0} | target:${overlayBoxWidth}x${textLineHeight}`);
+        } catch (_) {
+          // ignore
+        }
+        if (coupleBuf) {
+          try {
+            overlaysTop.push({ kind: 'couple', png: PNG.sync.read(coupleBuf) });
+          } catch (e) {
+            const msg = e && e.message ? e.message : String(e);
+            try { fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] Couple label PNG read failed | error:${msg}`); } catch (_) {}
           }
-
-          blitOverlayPng(page, overlay, startX, startY);
-
-          // Write final page (QR + barcode)
-          await writePngToFile(page, outPath);
         }
       }
-    } else if (printFolderNameBelowBarcode) {
-      // Just text, no barcode
-      const text = String(barcodeText ?? '').trim();
-      if (text) {
-        const existing = fs.readFileSync(outPath);
-        // We need Jimp to render text easily
-        const { Jimp, JimpMime } = require('jimp');
 
-        const image = await Jimp.read(existing);
-        const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK); // Standard black font
+      // Studio name (line 2)
+      if (hasStudio) {
+        const studioText = String(orderDetails.studioName).trim();
+        const studioBuf = await tryRenderTextLabelBuffer(studioText, overlayBoxWidth, textLineHeight);
+        try {
+          fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] Studio label buffer | ok:${!!studioBuf} | len:${studioBuf ? studioBuf.length : 0} | target:${overlayBoxWidth}x${textLineHeight}`);
+        } catch (_) {
+          // ignore
+        }
+        if (studioBuf) {
+          try {
+            overlaysTop.push({ kind: 'studio', png: PNG.sync.read(studioBuf) });
+          } catch (e) {
+            const msg = e && e.message ? e.message : String(e);
+            try { fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] Studio label PNG read failed | error:${msg}`); } catch (_) {}
+          }
+        }
+      }
 
-        const pageWidth = Number(image.width) || Number(image.bitmap.width);
-        const pageHeight = Number(image.height) || Number(image.bitmap.height);
+      if (wantBarcode) {
+        // Keep barcode compact so it doesn't dominate the page.
+        const barcodeBuf = await tryRenderBarcodeBuffer(text, barcodeBoxWidth, barcodeBoxHeight, false);
+        try {
+          fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] Barcode buffer | ok:${!!barcodeBuf} | len:${barcodeBuf ? barcodeBuf.length : 0} | target:${barcodeBoxWidth}x${barcodeBoxHeight}`);
+        } catch (_) {
+          // ignore
+        }
+        if (barcodeBuf) {
+          try {
+            overlaysBottom.push({ kind: 'barcode', png: PNG.sync.read(barcodeBuf) });
+          } catch (e) {
+            const msg = e && e.message ? e.message : String(e);
+            try { fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] Barcode PNG read failed | error:${msg}`); } catch (_) {}
+          }
+        }
+      }
 
-        // Measure text width to center it
-        const textWidth = Jimp.measureText(font, text);
-        const textHeight = Jimp.measureTextHeight(font, text, pageWidth);
+      if (wantFolderName) {
+        // Required format: Job ID: <FolderName>
+        const folderNameText = path.basename(FolderPath || '') || '';
+        const jobFolderText = `Job ID: ${folderNameText}`;
+        const labelBuf = await tryRenderTextLabelBuffer(jobFolderText, overlayBoxWidth, textLineHeight);
+        try {
+          fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] Job ID label buffer | ok:${!!labelBuf} | len:${labelBuf ? labelBuf.length : 0} | target:${overlayBoxWidth}x${textLineHeight}`);
+        } catch (_) {
+          // ignore
+        }
+        if (labelBuf) {
+          try {
+            overlaysBottom.push({ kind: 'jobfolder', png: PNG.sync.read(labelBuf) });
+          } catch (e) {
+            const msg = e && e.message ? e.message : String(e);
+            try { fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] Job ID label PNG read failed | error:${msg}`); } catch (_) {}
+          }
+        }
+      }
 
-        const qrBottomY = (bgResult && bgResult.offsetY != null && bgResult.qrPixelSize != null)
-          ? (bgResult.offsetY + bgResult.qrPixelSize)
-          : Math.floor((pageHeight + effectiveQrTargetSize) / 2);
+      const hasTop = overlaysTop.length > 0;
+      const hasBottom = overlaysBottom.length > 0;
 
-        const margin = 20;
-        const startX = Math.max(0, Math.floor((pageWidth - textWidth) / 2));
-        let startY = qrBottomY + margin;
+      if (hasTop || hasBottom) {
+        const belowQrY = qrBottomY + marginBelowQr;
 
-        if (startY + textHeight > pageHeight) {
-          startY = Math.max(0, pageHeight - textHeight - 8);
+        // 1) Render top overlays (couple/studio) immediately below QR.
+        let cursorY = belowQrY;
+        for (const o of overlaysTop) {
+          const overlay = o.png;
+          if (!overlay || !(overlay.width > 0 && overlay.height > 0)) continue;
+          const startX = Math.floor((pageWidth - overlay.width) / 2);
+          blitOverlayPng(page, overlay, startX, cursorY);
+          cursorY += overlay.height + gap;
         }
 
-        image.print({ font, x: startX, y: startY, text: text });
+        // 2) Render bottom overlays (barcode + Job ID) so their block sits 20% above bottom.
+        if (hasBottom) {
+          const bottomOffset = Math.max(8, Math.floor(pageHeight * 0.20));
+          const bottomBlockHeight = overlaysBottom.reduce((sum, o) => sum + (o.png?.height || 0), 0) + (gap * Math.max(0, overlaysBottom.length - 1));
+          let bottomStartY = (pageHeight - bottomOffset) - bottomBlockHeight;
 
-        // Save back to disk
-        const buffer = await image.getBuffer(JimpMime.png);
-        const { PNG } = require('pngjs');
-        const finalPage = PNG.sync.read(buffer);
-        await writePngToFile(finalPage, outPath);
+          // Ensure the bottom block stays below the top block.
+          const minBottomStart = hasTop ? Math.max(cursorY, belowQrY) : belowQrY;
+          if (bottomStartY < minBottomStart) bottomStartY = minBottomStart;
+
+          // Ensure it fits on the page.
+          if (bottomStartY + bottomBlockHeight > pageHeight - 2) {
+            bottomStartY = Math.max(0, pageHeight - bottomBlockHeight - 2);
+          }
+          if (bottomStartY < 0) bottomStartY = 0;
+
+          let y = bottomStartY;
+          for (const o of overlaysBottom) {
+            const overlay = o.png;
+            if (!overlay || !(overlay.width > 0 && overlay.height > 0)) continue;
+            const startX = Math.floor((pageWidth - overlay.width) / 2);
+            blitOverlayPng(page, overlay, startX, y);
+            y += overlay.height + gap;
+          }
+        }
+
+        await writePngToFile(page, outPath);
+
+        try {
+          const outSize = fs.existsSync(outPath) ? fs.statSync(outPath).size : -1;
+          fs.appendFileSync(
+            logFile,
+            `\n[${new Date().toISOString()}] Overlays rendered | top:${overlaysTop.length} | bottom:${overlaysBottom.length} | bottomOffsetPct:20 | outSize:${outSize}`
+          );
+        } catch (_) {
+          // ignore
+        }
+      }
+    } else if (hasAnyOverlays) {
+      try {
+        fs.appendFileSync(logFile, `\n[${new Date().toISOString()}] Overlay skipped | reason:${text ? 'no-overlays' : 'empty-text'} | couple:${hasCouple} | studio:${hasStudio} | barcode:${wantBarcode} | folderName:${wantFolderName} | barcodeTextLen:${text.length}`);
+      } catch (_) {
+        // ignore
       }
     }
 

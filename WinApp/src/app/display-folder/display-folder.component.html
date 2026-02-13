@@ -162,9 +162,27 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body qr-bg-modal-body">
+            <div class="form-group qr-pref-section mb-0">
+                    <div class="form-check qr-pref-check">
+                        <input class="form-check-input" type="checkbox" id="qrGenerateBarcode"
+                            [(ngModel)]="qrGenerateBarcodeTemp">
+                        <label class="form-check-label" for="qrGenerateBarcode">
+                            Print Barcode
+                        </label>
+                    </div>
+
+                    <div class="form-check mt-1 qr-pref-check">
+                        <input class="form-check-input" type="checkbox" id="qrPrintFolderNameBelowBarcode"
+                            [(ngModel)]="qrPrintFolderNameBelowBarcodeTemp">
+                        <label class="form-check-label" for="qrPrintFolderNameBelowBarcode">
+                            Print folder name/Job ID
+                        </label>
+                    </div>
+                    <hr class="qr-pref-divider">
+                </div>
+            <div class="modal-body qr-bg-modal-body pt-2">
                 <div class="form-group">
-                    <label>Select image</label>
+                    <label>Select Qr Code Template</label>
                     <input #qrBgFileInput type="file" class="d-none" accept=".png,image/png"
                         (change)="onQrBgFileSelected($event)">
 
@@ -196,26 +214,10 @@
                     </div>
                 </div>
                 <ng-template #noPreview>
-                    <div class="text-muted">No image selected.</div>
+                    <div class="text-muted">Only png images of size 12*18 inches are supported</div>
                 </ng-template>
 
-                <div class="form-group mt-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="qrGenerateBarcode"
-                            [(ngModel)]="qrGenerateBarcodeTemp">
-                        <label class="form-check-label" for="qrGenerateBarcode">
-                            Print Barcode
-                        </label>
-                    </div>
-
-                    <div class="form-check mt-2">
-                        <input class="form-check-input" type="checkbox" id="qrPrintFolderNameBelowBarcode"
-                            [(ngModel)]="qrPrintFolderNameBelowBarcodeTemp">
-                        <label class="form-check-label" for="qrPrintFolderNameBelowBarcode">
-                            Print folder name
-                        </label>
-                    </div>
-                </div>
+                
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="cancelQrBgModal()">Cancel</button>

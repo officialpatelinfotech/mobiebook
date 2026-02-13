@@ -682,7 +682,7 @@ CREATE DEFINER=`mobionline`@`%` PROCEDURE `get_page_detail` (IN `user_typeid` IN
 END$$
 
 CREATE DEFINER=`mobionline`@`%` PROCEDURE `get_photographer_user` (IN `username` VARCHAR(100))  BEGIN
-SELECT register_user_id
+ SELECT register_user_id
 FROM register_user
 WHERE TRIM(LOWER(user_name)) = TRIM(LOWER(username))
     AND isactive = 1

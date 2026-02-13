@@ -214,6 +214,18 @@ select:focus {
     overflow-y: auto;
 }
 
+.qr-pref-section {
+    padding: 10px 16px 0 16px;
+}
+
+.qr-pref-check {
+    margin-left: 6px;
+}
+
+.qr-pref-divider {
+    margin: 6px 0 6px 0;
+}
+
 .qr-bg-preview {
     max-height: 60vh;
     overflow: auto;
