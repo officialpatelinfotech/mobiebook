@@ -20,6 +20,10 @@ export class EalbumPreviewComponent implements OnInit {
 
   constructor() { }
 
+  private normalizePageViewType(v: any): string {
+    return (v ?? '').toString().trim().toUpperCase();
+  }
+
   ngOnInit(): void {
     setTimeout(() => {
       this.preview();
@@ -31,8 +35,8 @@ export class EalbumPreviewComponent implements OnInit {
     debugger;
     let albums = []
     let blankImage = GLOBAL_VARIABLE.DEFAULT_IMG_TP;
-    let front = this.pages.find(z => z.PageViewType == PageViewType.Front);
-    let back = this.pages.find(z => z.PageViewType == PageViewType.Back);
+    let front = this.pages.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.Front);
+    let back = this.pages.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.Back);
     if(front != undefined){
       albums.push({ src: front.ImageLink, thumb: front.ImageLink, title: '' })
     }
@@ -41,8 +45,8 @@ export class EalbumPreviewComponent implements OnInit {
     }
   
 
-    let frontTp = this.pages.find(z => z.PageViewType == PageViewType.TPFront);
-    let backTp = this.pages.find(z => z.PageViewType == PageViewType.TPBack);
+    let frontTp = this.pages.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.TPFront);
+    let backTp = this.pages.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.TPBack);
     if (frontTp != undefined) {
       if (this.albumdetail.PageType !== IMG_TYPE.Spread) {
         albums.push({ src: blankImage, thumb: blankImage, title: '' })
@@ -50,9 +54,21 @@ export class EalbumPreviewComponent implements OnInit {
       albums.push({ src: frontTp.ImageLink, thumb: frontTp.ImageLink, title: '' })
     }
 
+    const embossPages = (this.pages || []).filter(z =>
+      (this.normalizePageViewType(z?.PageViewType) === PageViewType.Emboss)
+    );
+    if (embossPages.length > 0) {
+      embossPages.forEach(p => {
+        if (this.albumdetail.PageType !== IMG_TYPE.Spread) {
+          albums.push({ src: blankImage, thumb: blankImage, title: '' })
+        }
+        albums.push({ src: p.ImageLink, thumb: p.ImageLink, title: '' })
+      })
+    }
+
     let sortbySequence = [].slice.call(this.pages).sort((a, b) => (a.SequenceNo < b.SequenceNo ? -1 : 1));
     sortbySequence.forEach(element => {
-      if (element.PageViewType === PageViewType.Page
+      if (this.normalizePageViewType(element?.PageViewType) === PageViewType.Page
         && element.IsAlbumView == true) {
         albums.push({ src: element.ImageLink, thumb: element.ImageLink, title: '' })
       }

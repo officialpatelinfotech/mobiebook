@@ -3,7 +3,11 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: true
+  production: false,
+  apiBaseUrl: 'http://localhost:5000/',
+  // In local/dev, allow login even if the user isn't flagged for Window App.
+  // Production builds should enforce this.
+  enforceWindowAppAccess: false
 };
 
 /*

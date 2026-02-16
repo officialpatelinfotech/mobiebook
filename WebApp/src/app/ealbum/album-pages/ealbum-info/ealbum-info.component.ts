@@ -204,7 +204,7 @@ export class EalbumInfoComponent implements OnInit {
 
 
     let userDetail = JSON.parse(this.localStoreService.getItem(GLOBAL_VARIABLE.LOGIN_DETAIL));
-    let logoCreatedImage = "https://api.mobiebook.online/Resources/" + userDetail.UserId + "/" + this.elabumId + "/icons/72x72.png?date=" + new Date();
+    let logoCreatedImage = `${GLOBAL_VARIABLE.SERVER_LINK}Resources/${userDetail.UserId}/${this.elabumId}/icons/72x72.png?date=${new Date()}`;
 
 
     let detail = this;

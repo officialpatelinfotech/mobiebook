@@ -36,30 +36,50 @@ export class JwtInterceptorService  implements HttpInterceptor {
     return next.handle(request)
         .pipe(
             catchError((error: HttpErrorResponse) => {
-                
+
+                // `status === 0` is typically network error / CORS / server down.
+                if (error.status === 0) {
+                    return throwError('Network error: cannot reach server. Please ensure the API is running.');
+                }
+
                 let errMsg = '';
-                // Client Side Error
-                if (error instanceof HttpErrorResponse) {
-                    const errorDetail = error.error.errors === undefined ? error.error : error.error.errors;
-                    if (error.status === 400) {
-                        errMsg = `Error: ${errorDetail.message}`;
-                    }
-                    else if(error.status === 401){
-                        
-                    }
-                    else if (errorDetail.MessageDetail) {
-                        errMsg = errorDetail.MessageDetail;
-                    }
-                    else if (errorDetail.length > 0) {
-                        errMsg = `Error: ${errorDetail[0].Message}`;
-                    }
-                    else {
-                        errMsg = `Error: ${error.error}`;
+                const payload: any = error.error;
+
+                if (typeof payload === 'string') {
+                    errMsg = payload;
+                }
+                else if (payload?.message) {
+                    errMsg = payload.message;
+                }
+                else if (payload?.MessageDetail) {
+                    errMsg = payload.MessageDetail;
+                }
+                else if (payload?.errors && typeof payload.errors === 'object') {
+                    const keys = Object.keys(payload.errors);
+                    if (keys.length > 0) {
+                        const first = payload.errors[keys[0]];
+                        errMsg = Array.isArray(first) ? String(first[0]) : String(first);
                     }
                 }
-                else {  // Server Side Error
-                    errMsg = `Error Code: ${error},  Message: ${error}`;
+                else if (Array.isArray(payload) && payload.length > 0) {
+                    const first = payload[0];
+                    errMsg = first?.Message || first?.message || JSON.stringify(first);
                 }
+                else if (error.message) {
+                    errMsg = error.message;
+                }
+                else {
+                    errMsg = `HTTP ${error.status}`;
+                }
+
+                if (error.status === 401) {
+                    errMsg = errMsg || 'Unauthorized';
+                }
+
+                if (!/^Error\s*:/i.test(errMsg)) {
+                    errMsg = `Error: ${errMsg}`;
+                }
+
                 return throwError(errMsg);
             })
         );

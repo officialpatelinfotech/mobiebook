@@ -1,4 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron')
+const { generateAlbumQr } = require('./qr-generator');
+
 const url = require("url");
 const path = require("path");
 const fs = require("fs");
@@ -97,3 +99,11 @@ function getDirectory() {
 //     })
 //     console.log('directories selected', result.filePaths)
 //   })
+ipcMain.handle('generate-qr', async (event, payload) => {
+    try {
+        return await generateAlbumQr(payload);
+    } catch (e) {
+        console.error('QR generation failed:', e);
+        return { ok: false, error: (e && e.message) ? e.message : String(e) };
+    }
+});

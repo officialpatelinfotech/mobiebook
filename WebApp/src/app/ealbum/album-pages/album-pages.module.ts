@@ -8,7 +8,6 @@ import { EalbumPublishComponent } from './ealbum-publish/ealbum-publish.componen
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { DragDropModule } from '@angular/cdk/drag-drop';
-import { Ng2ImgMaxModule, Ng2ImgMaxService } from 'ng2-img-max';
 //import { SharedModule } from 'src/app/shared/shared.module';
 import { EalbumService } from '../ealbum.service';
 import { NotificationService } from 'src/app/services/notification.service';
@@ -40,7 +39,6 @@ import { SwapImageComponent } from './swap-image/swap-image.component';
     ReactiveFormsModule,    
     NgSelectModule,    
     DragDropModule,
-    Ng2ImgMaxModule,
     NgbModule,
     SharedModule
   ],

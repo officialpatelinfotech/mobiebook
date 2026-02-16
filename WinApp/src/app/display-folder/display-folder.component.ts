@@ -3,13 +3,16 @@ import { ElectronService } from 'ngx-electron';
 import { ImagesService } from '../images.service';
 import { FileTree } from '../model/filetree.metadata';
 import { AudioMetaData, FolderDetailMetaData } from '../model/folderdetail.metadata';
-import { from, Observable } from 'rxjs';
-import { concatMap } from 'rxjs/operators';
+import { from, Observable, BehaviorSubject, Subject, defer, fromEvent, interval, merge, of, throwError } from 'rxjs';
+import { catchError, concatMap, distinctUntilChanged, filter, map, startWith, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 import { AddAlbumMetaData } from '../model/addalbum.metadata';
 import { EalbumService } from '../services/ealbum.service';
 import { HttpEventType, HttpResponse } from '@angular/common/http';
 import { IMG_TYPE } from '../config/globalvariable';
 import { ExcelExportService } from '../excel-export.service';
+import { LocalStorageService } from '../services/local-storage.service';
+import { PreferencesModalService } from '../services/preferences-modal.service';
+import { GLOBAL_VARIABLE } from '../config/globalvariable';
 
 const Compress = require('client-compress')
 
@@ -17,11 +20,18 @@ const Compress = require('client-compress')
 
 declare var $: any;
 
-const electron = (<any>window).require('electron');
-var remote = electron.remote;
-var electronFs = remote.require('fs');
-var dialog = remote.dialog;
-var util = remote.require('util');
+let electron: any = null;
+try {
+  electron = (<any>window)?.require ? (<any>window).require('electron') : null;
+} catch {
+  electron = null;
+}
+
+var remote = electron?.remote;
+var electronFs = remote?.require ? remote.require('fs') : null;
+var electronPath = remote?.require ? remote.require('path') : null;
+var dialog = remote?.dialog;
+var util = remote?.require ? remote.require('util') : null;
 
 declare var alphaNumericSort: Function;
 
@@ -34,6 +44,102 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   images: string[] = [];
   directory: any[] = [];
   currentWatcher: any;
+
+  // QR background modal state
+  qrBgModalOpen: boolean = false;
+  qrBackgroundImageFile: File | null = null;
+  qrBackgroundImagePreviewUrl: string | null = null;
+  qrBackgroundImagePath: string | null = null;
+
+  qrBgTempFile: File | null = null;
+  qrBgTempPreviewUrl: string | null = null;
+  qrBgTempPath: string | null = null;
+
+  // UI helper: display selected image name in modal (avoid native "No file chosen")
+  qrBgSelectedImageName: string | null = null;
+
+  // Preferences: generate barcode under QR (per account)
+  qrGenerateBarcode: boolean = false;
+  qrGenerateBarcodeTemp: boolean = false;
+
+  // Preferences: print folder name below barcode (per account)
+  qrPrintFolderNameBelowBarcode: boolean = false;
+  qrPrintFolderNameBelowBarcodeTemp: boolean = false;
+
+  private readonly enableUploadDebugLog = true;
+  private readonly coverAlertShownForFolder = new Set<string>();
+
+  private readonly NO_PAGES_ERROR = 'No pages found';
+  private noPagesAlertShownForFolder = new Set<string>();
+
+  // ADD: spread limit constant (used only for validation)
+  private readonly MAX_SPREADS = 72;
+
+  private setFolderErrorDetail(folder: FolderDetailMetaData, errorDetail: string) {
+    const folderName = folder?.FolderName;
+    const canonical = folderName ? this.folderDetail?.find(x => x.FolderName === folderName) : null;
+
+    if (canonical) {
+      canonical.ErrorDetail = errorDetail;
+    } else {
+      folder.ErrorDetail = errorDetail;
+    }
+
+    const mirror = folderName ? this.allfolderDetail?.find(x => x.FolderName === folderName) : null;
+    if (mirror) mirror.ErrorDetail = errorDetail;
+
+    this.cdr.detectChanges();
+  }
+
+  private folderHasInsidePages(folderImages: any[] | undefined | null): boolean {
+    const images = Array.isArray(folderImages) ? folderImages : [];
+    for (const img of images) {
+      if (this.isImageFileName(img?.name)) {
+        const type = this.pageType(img.name);
+        if (type === 'PAGE') return true;
+      }
+    }
+    return false;
+  }
+
+  private markFolderAsNoPagesFailed(folder: FolderDetailMetaData) {
+    // The UI treats Status "Invalid" as FAILED.
+    this.setFolderStatus(folder, 'Invalid');
+    this.setFolderErrorDetail(folder, this.NO_PAGES_ERROR);
+    folder.IsProcess = false;
+  }
+
+  private alertNoPagesFoldersOnce(folderNames: string[]) {
+    const unique = (folderNames || [])
+      .map(x => String(x || '').trim())
+      .filter(Boolean)
+      .filter((name) => !this.noPagesAlertShownForFolder.has(name));
+
+    if (!unique.length) return;
+
+    unique.forEach((name) => this.noPagesAlertShownForFolder.add(name));
+
+    if (unique.length === 1) {
+      alert(`No pages found in the folder:\n\n${unique[0]}`);
+    } else {
+      alert(`No pages found in the following folders:\n\n${unique.join('\n')}`);
+    }
+  }
+
+  // Internet-awareness
+  private readonly destroy$ = new Subject<void>();
+  private readonly online$ = new BehaviorSubject<boolean>(this.isOnlineNow());
+  private currentProcessingFolder: FolderDetailMetaData | null = null;
+
+  private isOnlineNow(): boolean {
+    try {
+      const nav: Navigator | undefined = typeof navigator !== 'undefined' ? navigator : undefined;
+      const onLine = (nav as any)?.onLine;
+      return typeof onLine === 'boolean' ? onLine : true;
+    } catch {
+      return true;
+    }
+  }
 
   selectedDirectory: any;
   isDirectiveLoad: boolean = false;
@@ -52,12 +158,17 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   @ViewChild('mp3File')
   mp3File!: ElementRef;
 
+  @ViewChild('qrBgFileInput')
+  qrBgFileInput!: ElementRef;
+
   constructor(
     private _electronService: ElectronService,
     private imageService: ImagesService,
     private cdr: ChangeDetectorRef,
     private ealbumService: EalbumService,
     private excelExport: ExcelExportService,
+    private localStoreService: LocalStorageService,
+    private preferencesModalService: PreferencesModalService,
     private ngZone: NgZone
   ) {
 
@@ -69,15 +180,604 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.setupInternetAwareness();
     this.getAudioDetail();
+    this.loadSavedQrBgForCurrentUser();
+    this.loadSavedQrBarcodePreference();
+    this.loadSavedQrFolderNameBelowBarcodePreference();
+
+    // Allow opening Preferences modal from the top header.
+    this.preferencesModalService.openPreferences$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.openQrBgModal());
   }
 
   ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+
     if (this.currentWatcher) {
       this.currentWatcher.close();
     }
   }
 
+  openQrBgModal() {
+    this.qrBgTempFile = this.qrBackgroundImageFile;
+    this.qrBgTempPreviewUrl = this.qrBackgroundImagePreviewUrl;
+    this.qrBgTempPath = this.qrBackgroundImagePath;
+    this.qrBgSelectedImageName = this.deriveQrBgSelectedImageName();
+    this.qrGenerateBarcodeTemp = this.qrGenerateBarcode;
+    this.qrPrintFolderNameBelowBarcodeTemp = this.qrPrintFolderNameBelowBarcode;
+    this.qrBgModalOpen = true;
+  }
+
+  cancelQrBgModal() {
+    // Do not change saved values
+    this.qrBgTempFile = null;
+    this.qrBgTempPreviewUrl = null;
+    this.qrBgTempPath = null;
+    this.qrBgSelectedImageName = this.deriveQrBgSelectedImageName();
+    this.qrGenerateBarcodeTemp = this.qrGenerateBarcode;
+    this.qrPrintFolderNameBelowBarcodeTemp = this.qrPrintFolderNameBelowBarcode;
+    this.qrBgModalOpen = false;
+  }
+
+  private deriveQrBgSelectedImageName(): string | null {
+    try {
+      const f: any = this.qrBgTempFile || this.qrBackgroundImageFile;
+      const nameFromFile = typeof f?.name === 'string' ? String(f.name).trim() : '';
+      if (nameFromFile) return nameFromFile;
+
+      const p = String(this.qrBgTempPath || this.qrBackgroundImagePath || '').trim();
+      if (p) {
+        const last = p.replace(/\\/g, '/').split('/').pop();
+        return last ? String(last) : null;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  replaceQrBgImage() {
+    this.triggerQrBgEdit();
+  }
+
+  removeSelectedQrBgImage() {
+    // Permanently remove the saved QR background for this user (disk + localStorage).
+    this.deleteQrBgEverywhereForCurrentUser();
+
+    // Clear both modal selection and saved state.
+    this.qrBgTempFile = null;
+    this.qrBgTempPreviewUrl = null;
+    this.qrBgTempPath = null;
+    this.qrBgSelectedImageName = null;
+
+    this.qrBackgroundImageFile = null;
+    this.qrBackgroundImagePreviewUrl = null;
+    this.qrBackgroundImagePath = null;
+
+    try {
+      const input: any = this.qrBgFileInput?.nativeElement;
+      if (input) input.value = '';
+    } catch {
+      // ignore
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  private deleteQrBgEverywhereForCurrentUser() {
+    // Clears all persisted references + deletes any saved background image file under Electron userData.
+    try {
+      try { this.localStoreService.removeByKey(this.getQrBgStorageKey()); } catch { /* ignore */ }
+      try { this.localStoreService.removeByKey(this.getQrBgDataUrlStorageKey()); } catch { /* ignore */ }
+
+      // Best-effort file cleanup (only available in Electron runtime).
+      if (!electronFs || !electronPath || !remote) return;
+      if (!electronFs.existsSync || !electronFs.readdirSync || !electronFs.unlinkSync) return;
+
+      const userId = this.getCurrentUserIdText();
+
+      // If we have a direct path, try deleting it first.
+      const directPath = String(this.qrBackgroundImagePath || '').trim();
+      if (directPath && electronFs.existsSync(directPath)) {
+        try { electronFs.unlinkSync(directPath); } catch { /* ignore */ }
+      }
+
+      // Also delete any lingering qr-background.* file in the per-user directory.
+      let dir: string | null = null;
+      try {
+        dir = this.getQrBgUserDataDirForUser(userId);
+      } catch {
+        dir = null;
+      }
+
+      if (!dir || !electronFs.existsSync(dir)) return;
+
+      const files: string[] = electronFs.readdirSync(dir) as string[];
+      (files || [])
+        .filter((f) => /^qr-background\.(png|jpe?g|jpe|jfif|webp|gif|bmp|svg)$/i.test(String(f)))
+        .forEach((fileName) => {
+          try {
+            const fullPath = electronPath.join(dir as string, String(fileName));
+            if (electronFs.existsSync(fullPath)) {
+              electronFs.unlinkSync(fullPath);
+            }
+          } catch {
+            // ignore
+          }
+        });
+
+      // Optional: remove folder if it becomes empty.
+      try {
+        if (electronFs.rmdirSync) {
+          const remaining: string[] = electronFs.readdirSync(dir) as string[];
+          if (!remaining || remaining.length === 0) {
+            electronFs.rmdirSync(dir);
+          }
+        }
+      } catch {
+        // ignore
+      }
+    } catch {
+      // ignore - removal should be best-effort and never crash the UI.
+    }
+  }
+
+  triggerQrBgEdit() {
+    try {
+      const input: any = this.qrBgFileInput?.nativeElement;
+      if (input && typeof input.click === 'function') {
+        input.click();
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  saveQrBgImage() {
+    let savedOk = false;
+    try {
+      // Persist selected image into app-owned storage so it remains available across restarts.
+      // Image is optional: allow saving barcode preferences even if no image is selected.
+      const hasAnyImageInput = !!(this.qrBgTempPath || this.qrBgTempPreviewUrl);
+      let imageSavedOk = !hasAnyImageInput;
+      if (hasAnyImageInput) {
+        const saved = this.persistQrBgToUserData(this.qrBgTempPath, this.qrBgTempPreviewUrl);
+        if (saved?.path) {
+          this.qrBackgroundImagePath = saved.path;
+          this.qrBackgroundImagePreviewUrl = saved.previewDataUrl ?? this.qrBgTempPreviewUrl;
+          this.qrBackgroundImageFile = this.qrBgTempFile;
+          this.localStoreService.setItem(this.getQrBgStorageKey(), saved.path);
+          imageSavedOk = true;
+        } else {
+          // Fallback: if we at least have a DataURL (FileReader), persist that in localStorage.
+          const dataUrl = String(this.qrBgTempPreviewUrl ?? '').trim();
+          if (dataUrl && dataUrl.startsWith('data:image/')) {
+            this.qrBackgroundImagePath = null;
+            this.qrBackgroundImagePreviewUrl = dataUrl;
+            // Avoid keeping a stale path around.
+            try { this.localStoreService.removeByKey(this.getQrBgStorageKey()); } catch { /* ignore */ }
+            imageSavedOk = true;
+          }
+        }
+
+        // Best-effort: also save the DataURL in localStorage (can fail due to quota limits).
+        try {
+          const dataUrlToPersist = String(this.qrBackgroundImagePreviewUrl ?? this.qrBgTempPreviewUrl ?? '').trim();
+          if (dataUrlToPersist && dataUrlToPersist.startsWith('data:image/')) {
+            this.localStoreService.setItem(this.getQrBgDataUrlStorageKey(), dataUrlToPersist);
+          }
+        } catch {
+          // ignore
+        }
+
+        if (!imageSavedOk) {
+          throw new Error('Failed to save QR background image');
+        }
+      }
+
+      // persist barcode preference
+      this.qrGenerateBarcode = !!this.qrGenerateBarcodeTemp;
+      this.localStoreService.setItem(this.getQrBarcodePrefKey(), this.qrGenerateBarcode ? '1' : '0');
+
+      // persist folder-name-below-barcode preference
+      this.qrPrintFolderNameBelowBarcode = !!this.qrPrintFolderNameBelowBarcodeTemp;
+      this.localStoreService.setItem(this.getQrFolderNameBelowBarcodePrefKey(), this.qrPrintFolderNameBelowBarcode ? '1' : '0');
+
+      alert('All Preferences saved successfully');
+      savedOk = true;
+    } catch (e) {
+      console.error('Failed to save QR background image', e);
+      alert('Failed to save image');
+    } finally {
+      // Only close modal on successful save; keep it open on failure so user can retry.
+      if (savedOk) {
+        this.qrBgModalOpen = false;
+      }
+    }
+  }
+
+  onQrBgFileSelected(event: any) {
+    try {
+      const file: File | undefined = event?.target?.files?.[0];
+      if (!file) return;
+
+      // Enforce PNG-only background image selection.
+      const anyFile: any = file as any;
+      const nameForExt = String(anyFile?.path || file?.name || '').trim();
+      const ext = this.getExtention(nameForExt).toLowerCase();
+      if (ext && ext !== '.png') {
+        alert('Please select PNG image only.');
+        this.qrBgTempFile = null;
+        this.qrBgTempPreviewUrl = null;
+        this.qrBgTempPath = null;
+        this.qrBgSelectedImageName = null;
+        try {
+          const input: any = this.qrBgFileInput?.nativeElement;
+          if (input) input.value = '';
+        } catch {
+          // ignore
+        }
+        this.cdr.detectChanges();
+        return;
+      }
+
+      this.qrBgTempFile = file;
+      this.qrBgSelectedImageName = String(file?.name || '').trim() || this.qrBgSelectedImageName;
+
+      // In Electron, File often has a non-standard `path` property. Prefer this for IPC (more reliable than huge DataURLs).
+      const filePath = typeof anyFile?.path === 'string' ? String(anyFile.path) : null;
+      this.qrBgTempPath = filePath;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.qrBgTempPreviewUrl = String(reader.result || '');
+        this.qrBgSelectedImageName = this.qrBgSelectedImageName || this.deriveQrBgSelectedImageName();
+        this.cdr.detectChanges();
+      };
+      reader.onerror = () => {
+        this.qrBgTempPreviewUrl = null;
+      };
+      reader.readAsDataURL(file);
+    } catch {
+      // keep silent to avoid breaking flow
+    }
+  }
+
+  private getCurrentUserIdText(): string {
+    try {
+      const raw = this.localStoreService.getItem(GLOBAL_VARIABLE.LOGIN_DETAIL) ?? localStorage.getItem(GLOBAL_VARIABLE.LOGIN_DETAIL);
+      if (!raw) return 'anonymous';
+      const parsed = JSON.parse(raw);
+      const userId = parsed?.UserId ?? parsed?.userId ?? parsed?.userid;
+      const asText = String(userId ?? '').trim();
+      return asText || 'anonymous';
+    } catch {
+      return 'anonymous';
+    }
+  }
+
+  private getQrBgStorageKey(): string {
+    return `QR_BG_IMAGE_PATH_${this.getCurrentUserIdText()}`;
+  }
+
+  private getQrBgDataUrlStorageKey(): string {
+    return `QR_BG_IMAGE_DATAURL_${this.getCurrentUserIdText()}`;
+  }
+
+  private getQrBarcodePrefKey(): string {
+    return `QR_GENERATE_BARCODE_${this.getCurrentUserIdText()}`;
+  }
+
+  private getQrFolderNameBelowBarcodePrefKey(): string {
+    return `QR_PRINT_FOLDER_NAME_BELOW_BARCODE_${this.getCurrentUserIdText()}`;
+  }
+
+  private loadSavedQrBarcodePreference() {
+    try {
+      const raw = this.localStoreService.getItem(this.getQrBarcodePrefKey());
+      const text = String(raw ?? '').trim().toLowerCase();
+      this.qrGenerateBarcode = text === '1' || text === 'true' || text === 'yes';
+      this.qrGenerateBarcodeTemp = this.qrGenerateBarcode;
+    } catch {
+      this.qrGenerateBarcode = false;
+      this.qrGenerateBarcodeTemp = false;
+    }
+  }
+
+  private loadSavedQrFolderNameBelowBarcodePreference() {
+    try {
+      const raw = this.localStoreService.getItem(this.getQrFolderNameBelowBarcodePrefKey());
+      const text = String(raw ?? '').trim().toLowerCase();
+      this.qrPrintFolderNameBelowBarcode = text === '1' || text === 'true' || text === 'yes';
+      this.qrPrintFolderNameBelowBarcodeTemp = this.qrPrintFolderNameBelowBarcode;
+    } catch {
+      this.qrPrintFolderNameBelowBarcode = false;
+      this.qrPrintFolderNameBelowBarcodeTemp = false;
+    }
+  }
+
+  private getQrBgUserDataDirForUser(userId: string): string {
+    const userDataDir = remote?.app?.getPath ? remote.app.getPath('userData') : null;
+    if (!userDataDir) throw new Error('Electron userData path unavailable');
+    if (!electronPath?.join) throw new Error('Electron path API unavailable');
+    return electronPath.join(userDataDir, 'qr-background', userId);
+  }
+
+  private findSavedQrBgInUserData(userId: string): string | null {
+    try {
+      const dir = this.getQrBgUserDataDirForUser(userId);
+      if (!electronFs?.existsSync || !electronFs.existsSync(dir)) return null;
+      const files: string[] = electronFs.readdirSync(dir) as string[];
+      const match = (files || []).find(f => /^qr-background\.(png|jpe?g|jpe|jfif|webp|gif|bmp|svg)$/i.test(String(f)));
+      if (!match) return null;
+      if (!electronPath?.join) return null;
+      return electronPath.join(dir, match);
+    } catch {
+      return null;
+    }
+  }
+
+  private loadSavedQrBgForCurrentUser() {
+    try {
+      const userId = this.getCurrentUserIdText();
+      const fromStore = this.localStoreService.getItem(this.getQrBgStorageKey());
+      const candidate = fromStore && electronFs?.existsSync && electronFs.existsSync(fromStore)
+        ? fromStore
+        : this.findSavedQrBgInUserData(userId);
+
+      if (candidate) {
+        this.qrBackgroundImagePath = candidate;
+        this.qrBackgroundImagePreviewUrl = this.filePathToDataUrl(candidate);
+        // Refresh the storage pointer if it was missing/old.
+        this.localStoreService.setItem(this.getQrBgStorageKey(), candidate);
+        this.cdr.detectChanges();
+        return;
+      }
+
+      // Fallback: restore from DataURL saved in localStorage
+      const raw = this.localStoreService.getItem(this.getQrBgDataUrlStorageKey());
+      const dataUrl = String(raw ?? '').trim();
+      if (dataUrl && dataUrl.startsWith('data:image/')) {
+        this.qrBackgroundImagePath = null;
+        this.qrBackgroundImagePreviewUrl = dataUrl;
+        this.cdr.detectChanges();
+      }
+    } catch (e) {
+      console.error('Failed to load saved QR background image', e);
+    }
+  }
+
+  private persistQrBgToUserData(srcPath: string | null, srcDataUrl: string | null): { path: string; previewDataUrl?: string } | null {
+    if (!electronFs || !electronPath || !remote) return null;
+    if (!electronFs.existsSync || !electronFs.mkdirSync || !electronFs.copyFileSync || !electronFs.writeFileSync) return null;
+    if (!electronPath.join) return null;
+
+    const userId = this.getCurrentUserIdText();
+    let destDir: string;
+    try {
+      destDir = this.getQrBgUserDataDirForUser(userId);
+    } catch {
+      return null;
+    }
+
+    if (!electronFs.existsSync(destDir)) {
+      electronFs.mkdirSync(destDir, { recursive: true });
+    }
+
+    const ext = this.inferImageExtension(srcPath, srcDataUrl) ?? '.png';
+    const destPath = electronPath.join(destDir, `qr-background${ext}`);
+
+    if (srcPath && electronFs.existsSync(srcPath)) {
+      const samePath = String(srcPath).toLowerCase() === String(destPath).toLowerCase();
+      if (!samePath) {
+        electronFs.copyFileSync(srcPath, destPath);
+      }
+      const preview = this.filePathToDataUrl(destPath);
+      return { path: destPath, previewDataUrl: preview ?? undefined };
+    }
+
+    // Fallback: write from DataURL (when File.path isn't available)
+    if (srcDataUrl && srcDataUrl.startsWith('data:')) {
+      const match = srcDataUrl.match(/^data:([^;]+);base64,(.*)$/);
+      if (!match) throw new Error('Invalid data URL');
+      const base64 = match[2];
+
+      // Avoid relying on global Buffer (can fail in TS builds without node typings)
+      const NodeBuffer = (remote?.require ? remote.require('buffer')?.Buffer : null) || (electron?.remote?.require ? electron.remote.require('buffer')?.Buffer : null);
+      if (!NodeBuffer) throw new Error('Buffer unavailable');
+      const buf = NodeBuffer.from(base64, 'base64');
+
+      electronFs.writeFileSync(destPath, buf);
+      return { path: destPath, previewDataUrl: srcDataUrl };
+    }
+
+    return null;
+  }
+
+  private filePathToDataUrl(filePath: string): string | null {
+    try {
+      const ext = String(electronPath.extname(filePath) || '').toLowerCase();
+      const mime =
+        ext === '.jpg' || ext === '.jpeg' || ext === '.jpe' || ext === '.jfif' ? 'image/jpeg' :
+          ext === '.webp' ? 'image/webp' :
+            ext === '.gif' ? 'image/gif' :
+              ext === '.bmp' ? 'image/bmp' :
+                ext === '.svg' ? 'image/svg+xml' :
+                  'image/png';
+      const buf = electronFs.readFileSync(filePath);
+      const b64 = buf.toString('base64');
+      return `data:${mime};base64,${b64}`;
+    } catch {
+      return null;
+    }
+  }
+
+  private inferImageExtension(srcPath: string | null, srcDataUrl: string | null): string | null {
+    try {
+      if (srcPath) {
+        const ext = String(electronPath.extname(srcPath) || '').trim().toLowerCase();
+        return ext ? ext : null;
+      }
+      if (srcDataUrl && srcDataUrl.startsWith('data:')) {
+        if (srcDataUrl.startsWith('data:image/jpeg')) return '.jpg';
+        if (srcDataUrl.startsWith('data:image/jpg')) return '.jpg';
+        if (srcDataUrl.startsWith('data:image/pjpeg')) return '.jpg';
+        if (srcDataUrl.startsWith('data:image/jfif')) return '.jpg';
+        if (srcDataUrl.startsWith('data:image/webp')) return '.webp';
+        if (srcDataUrl.startsWith('data:image/gif')) return '.gif';
+        if (srcDataUrl.startsWith('data:image/bmp')) return '.bmp';
+        if (srcDataUrl.startsWith('data:image/svg')) return '.svg';
+        if (srcDataUrl.startsWith('data:image/png')) return '.png';
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  private async getQrBgForFolderMaybeRotated(detail: any): Promise<{ qrBgPath: string | null; qrBgDataUrl: string | null }> {
+    // This helper is invoked right before QR generation.
+    // For now it simply resolves the best available background input (path preferred),
+    // leaving any layout/rotation decisions to the QR generator in the Electron main process.
+    try {
+      // Prefer explicit in-memory selection
+      const directPath = String(this.qrBackgroundImagePath ?? '').trim();
+      if (directPath && electronFs?.existsSync && electronFs.existsSync(directPath)) {
+        const dataUrl = this.qrBackgroundImagePreviewUrl ?? this.filePathToDataUrl(directPath);
+        return { qrBgPath: directPath, qrBgDataUrl: dataUrl ?? null };
+      }
+
+      // If component state didn't have a path (or it went stale), try the persisted setting
+      try {
+        const fromStore = this.localStoreService.getItem(this.getQrBgStorageKey());
+        const candidate = String(fromStore ?? '').trim();
+        if (candidate && electronFs?.existsSync && electronFs.existsSync(candidate)) {
+          const dataUrl = this.qrBackgroundImagePreviewUrl ?? this.filePathToDataUrl(candidate);
+          return { qrBgPath: candidate, qrBgDataUrl: dataUrl ?? null };
+        }
+      } catch {
+        // ignore
+      }
+
+      // Last resort: if we only have a DataURL, pass it through
+      const dataUrlOnly = String(this.qrBackgroundImagePreviewUrl ?? '').trim();
+      if (dataUrlOnly && dataUrlOnly.startsWith('data:')) {
+        return { qrBgPath: null, qrBgDataUrl: dataUrlOnly };
+      }
+
+      // Final fallback: DataURL persisted in localStorage
+      try {
+        const raw = this.localStoreService.getItem(this.getQrBgDataUrlStorageKey());
+        const savedDataUrl = String(raw ?? '').trim();
+        if (savedDataUrl && savedDataUrl.startsWith('data:image/')) {
+          return { qrBgPath: null, qrBgDataUrl: savedDataUrl };
+        }
+      } catch {
+        // ignore
+      }
+    } catch (e) {
+      console.error('Failed to resolve QR background image', e, detail);
+    }
+
+    return { qrBgPath: null, qrBgDataUrl: null };
+  }
+
+  private setupInternetAwareness() {
+    merge(
+      fromEvent(window, 'online').pipe(map(() => true)),
+      fromEvent(window, 'offline').pipe(map(() => false)),
+      interval(3000).pipe(map(() => this.isOnlineNow())) // 3s polling as requested
+    )
+      .pipe(
+        startWith(this.isOnlineNow()),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((isOnline) => {
+        this.online$.next(isOnline);
+
+        // Flip current folder status immediately when connectivity changes (no index/progress resets)
+        if (!this.currentProcessingFolder) return;
+
+        if (!isOnline) {
+          this.setFolderStatus(this.currentProcessingFolder, 'Waiting for Internet');
+        } else {
+          // Only flip back if we were paused for internet
+          if (this.currentProcessingFolder.Status === 'Waiting for Internet') {
+            this.setFolderStatus(this.currentProcessingFolder, 'In Progress');
+          }
+        }
+      });
+  }
+
+  private waitForInternet$(): Observable<void> {
+    if (this.isOnlineNow()) return of(void 0);
+
+    // Wait until online using BOTH window events and 3-second polling; complete once online.
+    return merge(
+      fromEvent(window, 'online').pipe(map(() => this.isOnlineNow())),
+      fromEvent(window, 'offline').pipe(map(() => this.isOnlineNow())),
+      interval(3000).pipe(map(() => this.isOnlineNow()))
+    ).pipe(
+      startWith(this.isOnlineNow()),
+      tap((isOnline) => this.online$.next(isOnline)),
+      filter((isOnline) => isOnline),
+      take(1),
+      map(() => void 0),
+      takeUntil(this.destroy$)
+    );
+  }
+
+  private runWhenOnline<T>(folder: FolderDetailMetaData | null, fn: () => Observable<T>): Observable<T> {
+    return defer(() => {
+      if (!this.isOnlineNow()) {
+        if (folder) this.setFolderStatus(folder, 'Waiting for Internet');
+        return this.waitForInternet$().pipe(
+          tap(() => {
+            if (folder) this.setFolderStatus(folder, 'In Progress');
+          }),
+          switchMap(() => fn())
+        );
+      }
+      return fn();
+    }).pipe(
+      catchError((err) => {
+        // If we went offline mid-call: pause and retry the SAME call (resume from exact file/API).
+        if (!this.isOnlineNow()) {
+          if (folder) this.setFolderStatus(folder, 'Waiting for Internet');
+          return this.waitForInternet$().pipe(
+            tap(() => {
+              if (folder) this.setFolderStatus(folder, 'In Progress');
+            }),
+            switchMap(() => fn())
+          );
+        }
+        // Non-internet error should bubble to preserve existing behavior
+        return throwError(() => err);
+      })
+    );
+  }
+
+  private setFolderStatus(folder: FolderDetailMetaData, status: string) {
+    const folderName = folder?.FolderName;
+    const canonical = folderName ? this.folderDetail?.find(x => x.FolderName === folderName) : null;
+
+    // Always update the canonical item (folderDetail) when available.
+    if (canonical) {
+      canonical.Status = status;
+    } else {
+      folder.Status = status;
+    }
+
+    const mirror = folderName ? this.allfolderDetail?.find(x => x.FolderName === folderName) : null;
+    if (mirror) mirror.Status = status;
+
+    // keep UI in sync
+    this.cdr.detectChanges();
+  }
 
   excelDetail(data: any, saveInfo: any) {
     let excelData = {
@@ -135,23 +835,41 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     let files = FileTree.readDir(path);
     let currentFolderNames = this.folderDetail.map(x => x.FolderName);
     let hasChanges = false;
+    const newlyNoPagesFailed: string[] = [];
     files.forEach((row: any) => {
       if (row.isdirective) {
         if (!currentFolderNames.includes(row.name)) {
           this.processSingleFolder(row);
+          const added = this.folderDetail.find(x => x.FolderName === row.name);
+          if (added && added.Status === 'Invalid' && added.ErrorDetail === this.NO_PAGES_ERROR) {
+            newlyNoPagesFailed.push(added.FolderName || row.name);
+          }
           hasChanges = true;
         } else {
           // Update existing folder content
           let existingFolder = this.folderDetail.find(x => x.FolderName == row.name);
           if (existingFolder) {
             let newCount = this.fileCount(row);
-            // Check if count or content changed to avoid unnecessary updates if possible, 
-            // but for now just updating is safer to ensure state is fresh.
             if (existingFolder.FolderImages && (existingFolder.Counter !== newCount || existingFolder.FolderImages.length !== row.items.length)) {
               existingFolder.FolderImages = row.items;
               existingFolder.Counter = newCount;
 
-              // If it was invalid due to missing text file, re-check (optional but good)
+              // Mandatory cover validation on changes
+              const coverErr = this.getMissingCoverError(row.items, row.name);
+              if (coverErr) {
+                existingFolder.Status = "Invalid";
+                existingFolder.ErrorDetail = coverErr.message.split('\n')[0]; // keep ErrorDetail short
+                this.alertMissingCoversOnce(row.name, coverErr.message);
+                hasChanges = true;
+                return;
+              } else if (existingFolder.Status === "Invalid" &&
+                (existingFolder.ErrorDetail?.toLowerCase?.().includes('front cover') || existingFolder.ErrorDetail?.toLowerCase?.().includes('back cover'))) {
+                // covers fixed -> allow back to Open (order-file rule still applies below)
+                existingFolder.Status = "Open";
+                existingFolder.ErrorDetail = "";
+              }
+
+              // If it was invalid due to missing text file, re-check
               if (existingFolder.Status === "Invalid" && existingFolder.ErrorDetail === "Order file not found") {
                 let orderFile = this.getTxtFilePath(row.items);
                 if (orderFile != "") {
@@ -161,6 +879,22 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
                   this.readText(existingFolder.FolderTextFile, row.name);
                 }
               }
+
+              // No-pages validation (only for otherwise-valid folders)
+              if (existingFolder.Status === 'Open') {
+                const hasPagesNow = this.folderHasInsidePages(existingFolder.FolderImages);
+                if (!hasPagesNow) {
+                  this.markFolderAsNoPagesFailed(existingFolder);
+                  newlyNoPagesFailed.push(existingFolder.FolderName || row.name);
+                }
+              } else if (existingFolder.Status === 'Invalid' && existingFolder.ErrorDetail === this.NO_PAGES_ERROR) {
+                // If previously marked failed due to no pages, restore to Open when pages arrive.
+                const hasPagesNow = this.folderHasInsidePages(existingFolder.FolderImages);
+                if (hasPagesNow) {
+                  existingFolder.Status = 'Open';
+                  existingFolder.ErrorDetail = '';
+                }
+              }
               hasChanges = true;
             }
           }
@@ -168,9 +902,13 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       }
     });
 
+    if (newlyNoPagesFailed.length) {
+      this.alertNoPagesFoldersOnce(newlyNoPagesFailed);
+    }
+
     if (hasChanges) {
-      let allFolder = JSON.stringify(this.folderDetail);
-      this.allfolderDetail = JSON.parse(allFolder);
+      // Refresh the table without deep-cloning items (keep object identity so status stays consistent)
+      this.allfolderDetail = this.folderDetail.slice();
       this.cdr.detectChanges();
     }
   }
@@ -180,10 +918,33 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       return;
 
     let row = x;
+
+    // Mandatory cover validation (popup + mark invalid)
+    const coverErr = this.getMissingCoverError(row.items, row.name);
+    if (coverErr) {
+      let fold = new FolderDetailMetaData();
+      fold.FolderName = row.name;
+      fold.PageType = this.inferDefaultAlbumPageType(row.items);
+      fold.FolderTextFile = this.getTxtFilePath(row.items);
+      fold.IsProcess = false;
+      fold.EAlbumId = 0;
+      fold.FolderPath = row.path;
+      fold.Counter = this.fileCount(row);
+      fold.FolderImages = row.items;
+      fold.Status = "Invalid";
+      fold.ErrorDetail = coverErr.message.split('\n')[0];
+      this.folderDetail.push(fold);
+
+      this.alertMissingCoversOnce(row.name, coverErr.message);
+
+      this.allfolderDetail = this.folderDetail.slice();
+      return;
+    }
+
     let orderFile = this.getTxtFilePath(row.items);
     let fold = new FolderDetailMetaData();
     fold.FolderName = row.name;
-    fold.PageType = "Spread";
+    fold.PageType = this.inferDefaultAlbumPageType(row.items);
     fold.FolderTextFile = orderFile;
     fold.IsProcess = false;
     fold.EAlbumId = 0;
@@ -202,11 +963,17 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
       this.readText(fold.FolderTextFile, row.name);
       let itemDetail = this.logDetail(row.items)
-      this.readLogText(row.path, itemDetail, row.name)
+      this.readLogText(row.path, itemDetail, row.name);
+
+      // If the NEW folder has no inside pages, mark it FAILED (Invalid).
+      // Alerting is batched (browse + watcher) to avoid repeated popups.
+      const hasPages = this.folderHasInsidePages(fold.FolderImages);
+      if (!hasPages) {
+        this.markFolderAsNoPagesFailed(fold);
+      }
     }
 
-    let allFolder = JSON.stringify(this.folderDetail);
-    this.allfolderDetail = JSON.parse(allFolder);
+    this.allfolderDetail = this.folderDetail.slice();
   }
 
   browse() {
@@ -235,12 +1002,20 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
         this.directory = [];
         this.folderDetail = [];
+        this.noPagesAlertShownForFolder = new Set<string>();
 
         folderDetail.forEach(x => {
           this.processSingleFolder(x);
         });
 
         this.startWatching(this.selectedDirectory);
+
+        // Alert once for folders missing inside pages (only those validated as "no pages").
+        const noPagesFolders = (this.folderDetail || [])
+          .filter(f => f?.Status === 'Invalid' && f?.ErrorDetail === this.NO_PAGES_ERROR)
+          .map(f => f?.FolderName || 'Unknown Folder');
+
+        this.alertNoPagesFoldersOnce(noPagesFolders);
       });
   }
 
@@ -272,8 +1047,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
       for (let j = 0; j < items.items.length; j++) {
         let row = items.items[j];
-        let ext = this.getExtention(row.name);
-        if (ext.toString().toLowerCase() === ".jpg" || ext.toString().toLowerCase() === ".jpeg" || ext.toString().toLowerCase() === ".png") {
+        if (this.isImageFileName(row.name)) {
           i++;
         }
       }
@@ -281,10 +1055,10 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     return i;
   }
 
-  getExtention(fileName: string | string[]) {
-    var i = fileName.lastIndexOf('.');
-    if (i === -1) return false;
-    return fileName.slice(i)
+  getExtention(fileName: any): string {
+    const name = Array.isArray(fileName) ? fileName.join('') : (fileName ?? '').toString();
+    const i = name.lastIndexOf('.');
+    return i === -1 ? '' : name.slice(i);
   }
 
   getTxtFilePath(detail: any[]) {
@@ -394,7 +1168,13 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   }
 
 
-  ProcessAllImage() {
+  foldersProcessedInCurrentBatch: number = 0;
+
+  ProcessAllImage(isRecursion: boolean = false) {
+    if (!isRecursion) {
+      this.foldersProcessedInCurrentBatch = 0;
+    }
+
     if (this.selectedAudioId > 0) {
       if (this.isAllProcess == false && this.isCancel == false) {
         this.isAllProcess = true;
@@ -436,17 +1216,32 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     debugger;
     let imgs = detail.FolderImages;
 
+    // Track currently processing folder for online/offline status flips
+    this.currentProcessingFolder = detail;
+
     let details = this;
     let processImgCounter = 0;
-    let seq = this.changeSequence(imgs);
+    this.changeSequence(imgs);
+
     let saveImg: any[] = []
     let counter = this.totalFileCount(imgs);
+
     imgs.forEach(async (row: { name: string | string[]; path: string; SequenceNo: number; }) => {
       let ext = this.getExtention(row.name);
       if (ext.toString().toLowerCase() === ".jpg" || ext.toString().toLowerCase() === ".jpeg" || ext.toString().toLowerCase() === ".png") {
         this.getFileObject("file:///" + row.path, row.name, function (fileObject: any) {
           details.attachImage(fileObject, detail.PageType).subscribe((x) => {
-            saveImg.push({ url: details.saveImagesObservable(x, row.SequenceNo, details.pageType(x.name), detail.PageType, detail), imgName: row.name })
+            const computedViewType = details.pageType(x.name);
+
+            const uniqid = `${Date.now()}-${row.SequenceNo}-${Math.random().toString(16).slice(2)}`;
+
+            saveImg.push({
+              upload$: () => details.saveImagesObservable(x, row.SequenceNo, computedViewType, detail.PageType, detail, uniqid),
+              imgName: row.name,
+              viewtype: computedViewType,
+              pagetype: detail?.PageType
+            });
+
             processImgCounter = processImgCounter + 1;
             if (processImgCounter == counter) {
               details.ProcessImages(saveImg, detail, albumDetail);
@@ -455,22 +1250,147 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
         });
       }
     })
-
   }
 
   ProcessImages(imageDetail: any[], detail: any, albumDetail: any) {
-    let processImgCounter = 1;
+    // Track currently processing folder for online/offline status flips
+    this.currentProcessingFolder = detail;
+
+    let completed = 0;
+
     from(imageDetail)
       .pipe(
-        concatMap((x: any) => x.url)
-      ).subscribe((event: any) => {
+        concatMap((meta: any) =>
+          this.runWhenOnline(detail, () => meta.upload$())
+            .pipe(map((event: any) => ({ event, meta })))
+        )
+      )
+      .subscribe((payload: any) => {
+        const event = payload.event;
+        const meta = payload.meta;
 
         if (event.type === HttpEventType.UploadProgress) {
-          // imgRow.Progress = Math.round(100 * event.loaded / event.total);
+          // keep as-is (no reset on offline)
         } else if (event instanceof HttpResponse) {
-          processImgCounter = processImgCounter + 1;
-          if (processImgCounter == imageDetail.length) {
-            detail.Status = "Done";
+          completed = completed + 1;
+
+          if (completed >= imageDetail.length) {
+            this.setFolderStatus(detail, "Done");
+
+            // Generate album QR in Electron MAIN via IPC (do not block or break existing flow)
+            try {
+              const resolvedUniqId =
+                detail?.uniq_id ??
+                detail?.UniqId ??
+                detail?.uniqId ??
+                detail?.uniqid ??
+                albumDetail?.AlbumDetail?.uniq_id ??
+                albumDetail?.AlbumDetail?.UniqId ??
+                albumDetail?.AlbumDetail?.uniqId ??
+                albumDetail?.uniq_id ??
+                albumDetail?.UniqId ??
+                albumDetail?.uniqId;
+
+              const resolvedUniqIdText = String(resolvedUniqId ?? '').trim();
+              const folderPathText = String(detail?.FolderPath ?? '').trim();
+              if (!folderPathText) {
+                console.error('QR not generated: FolderPath missing/invalid', detail?.FolderPath);
+              } else if (!resolvedUniqIdText || resolvedUniqIdText.toLowerCase() === 'null' || resolvedUniqIdText.toLowerCase() === 'undefined') {
+                console.error('QR not generated: uniq id missing/invalid', resolvedUniqId);
+                // Persist a breadcrumb for debugging even without DevTools.
+                try {
+                  this.appendJsonLine(folderPathText, 'qr-debug.jsonl', {
+                    ts: new Date().toISOString(),
+                    stage: 'skip',
+                    reason: 'uniq_id missing/invalid',
+                    resolvedUniqId,
+                    availableKeys: Object.keys(detail || {})
+                  });
+                } catch {
+                  // ignore
+                }
+              } else {
+                (async () => {
+                  const bg = await this.getQrBgForFolderMaybeRotated(detail);
+
+                  const payload = {
+                    FolderPath: folderPathText,
+                    uniq_id: resolvedUniqIdText,
+                    qrBgPath: bg.qrBgPath,
+                    qrBgDataUrl: bg.qrBgDataUrl,
+                    generateBarcode: this.qrGenerateBarcode,
+                    barcodeText: String(detail?.FolderName ?? '').trim(),
+                    printFolderNameBelowBarcode: this.qrPrintFolderNameBelowBarcode,
+                    pageType: (detail?.PageType ?? albumDetail?.AlbumDetail?.PageType ?? albumDetail?.PageType)
+                  };
+
+                  if (electron?.ipcRenderer?.invoke) {
+                    try {
+                      this.appendJsonLine(folderPathText, 'qr-debug.jsonl', {
+                        ts: new Date().toISOString(),
+                        stage: 'invoke',
+                        payload
+                      });
+                    } catch {
+                      // ignore
+                    }
+
+                    electron.ipcRenderer.invoke('generate-qr', payload)
+                      .then((res: any) => {
+                        if (res?.ok) {
+                          console.log('QR generated:', res.outPath, 'URL:', res.url);
+                          try {
+                            this.appendJsonLine(folderPathText, 'qr-debug.jsonl', {
+                              ts: new Date().toISOString(),
+                              stage: 'success',
+                              result: res
+                            });
+                          } catch {
+                            // ignore
+                          }
+                        } else {
+                          console.error('QR generation failed:', res?.error || res);
+                          try {
+                            this.appendJsonLine(folderPathText, 'qr-debug.jsonl', {
+                              ts: new Date().toISOString(),
+                              stage: 'failure',
+                              result: res
+                            });
+                          } catch {
+                            // ignore
+                          }
+                        }
+                      })
+                      .catch((err: any) => {
+                        console.error('QR IPC invoke error:', err);
+                        try {
+                          this.appendJsonLine(folderPathText, 'qr-debug.jsonl', {
+                            ts: new Date().toISOString(),
+                            stage: 'invoke-error',
+                            error: (err && err.message) ? err.message : String(err)
+                          });
+                        } catch {
+                          // ignore
+                        }
+                      });
+                  } else {
+                    console.error('ipcRenderer.invoke not available; cannot generate QR');
+                    try {
+                      this.appendJsonLine(folderPathText, 'qr-debug.jsonl', {
+                        ts: new Date().toISOString(),
+                        stage: 'skip',
+                        reason: 'ipcRenderer.invoke not available'
+                      });
+                    } catch {
+                      // ignore
+                    }
+                  }
+                })().catch((e: any) => console.error('QR bg rotate/prepare error:', e));
+              }
+            } catch (e) {
+              console.error('QR generation trigger error:', e);
+            }
+
             var allData = this.allfolderDetail.find(x => x.FolderName == detail.FolderName);
             if (allData != undefined) {
               allData.Status = "Done";
@@ -478,16 +1398,23 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
             }
             this.updateImageStatus(detail, "DONE");
 
+
+            // done -> clear current processing folder reference
+            this.currentProcessingFolder = null;
+
             if (this.isAllProcess && !this.isCancel) {
               this.isAllProcess = false;
-              this.ProcessAllImage();
+              this.ProcessAllImage(true);
             } else {
               this.isAllProcess = false;
             }
           }
         }
-
-      })
+      },
+        // If an error occurs while online, keep existing behavior (do not silently swallow unknown errors)
+        (err: any) => {
+          // If offline, runWhenOnline already paused/retried; reaching here is a non-internet error.
+        });
   }
 
   updateImageStatus(detail: any, imgName: string) {
@@ -526,25 +1453,23 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     let backTP: any[] = [];
     let back: any[] = [];
 
-    // 3. Distribute based on pageType
-    // Handle duplicate filenames by picking the next unused image instance for each sorted name
-    const usedIndices: boolean[] = new Array(images.length).fill(false);
+    // 3. Map for lookup
+    let imageMap = new Map();
+    images.forEach((img: any) => imageMap.set(img.name, img));
+
+    // 4. Distribute based on pageType
+    // Iterating through sorted imgName ensures 'pages' bucket ends up sorted
     imgName.forEach((name: any) => {
-      // find first unused image with this name
-      for (let i = 0; i < images.length; i++) {
-        if (!usedIndices[i] && images[i].name === name) {
-          usedIndices[i] = true;
-          const img = images[i];
-          const pType = this.pageType(name);
-          if (pType === 'FRONT') front.push(img);
-          else if (pType === 'BLANK') blanks.push(img);
-          else if (pType === 'EMBOSS') emboss.push(img);
-          else if (pType === 'TPFRONT') frontTP.push(img);
-          else if (pType === 'TPBACK') backTP.push(img);
-          else if (pType === 'BACK') back.push(img);
-          else pages.push(img);
-          break;
-        }
+      let img = imageMap.get(name);
+      if (img) {
+        let pType = this.pageType(name);
+        if (pType === 'FRONT') front.push(img);
+        else if (pType === 'BLANK') blanks.push(img);
+        else if (pType === 'EMBOSS') emboss.push(img);
+        else if (pType === 'TPFRONT') frontTP.push(img);
+        else if (pType === 'TPBACK') backTP.push(img);
+        else if (pType === 'BACK') back.push(img);
+        else pages.push(img);
       }
     });
 
@@ -607,9 +1532,16 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     // BACK TP
     if (/^(f2|back( |)tp|last page|back tp)$/.test(normalized)) return 'TPBACK';
 
-    // EMBOSS - match e1, e-1, emb, emboss, embose and variants with/without separators and optional digits
-    // Examples matched: e1, e-1, emb, emboss, embose, emboss1, emboss01, emb01, emboss 1
-    if (/^e-?1$/.test(normalized) || /^emb(?:oss|ose)?(?:\s*\d*)?$/.test(normalized) || normalized === 'emb') {
+    // EMBOSS - match e1, e-1, emb, emboss, embose and variants.
+    // Also supports names that *contain* emboss like "32metalicemboss" or "001RIGHTSIDEMETALICEMBOSS".
+    // Examples matched: e1, e-1, emb, emboss, embose, emboss1, emboss01, emb01, emboss 1, 32metalicemboss
+    if (
+      /^e-?1$/.test(normalized) ||
+      /^emb(?:oss|ose)?(?:\s*\d*)?$/.test(normalized) ||
+      normalized === 'emb' ||
+      normalized.includes('emboss') ||
+      normalized.includes('embose')
+    ) {
       return 'EMBOSS';
     }
 
@@ -619,7 +1551,43 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     return 'PAGE';
   }
 
+  private isImageFileName(name: any): boolean {
+    if (!name || typeof name !== 'string') return false;
+    const ext = this.getExtention(name);
+    if (!ext) return false;
+    const e = ext.toString().toLowerCase();
+    return e === '.jpg' || e === '.jpeg' || e === '.png';
+  }
 
+  private getMissingCoverError(items: any[], folderName?: string): { missingFront: boolean; missingBack: boolean; message: string } | null {
+    const safeItems = Array.isArray(items) ? items : [];
+    const hasFront = safeItems.some(f => this.isImageFileName(f?.name) && this.pageType(f.name) === 'FRONT');
+    const hasBack = safeItems.some(f => this.isImageFileName(f?.name) && this.pageType(f.name) === 'BACK');
+
+    const missingFront = !hasFront;
+    const missingBack = !hasBack;
+
+    if (!missingFront && !missingBack) return null;
+
+    const parts: string[] = [];
+    if (missingFront) parts.push('Front cover is mandatory');
+    if (missingBack) parts.push('Back cover is mandatory');
+
+    // Keep popup text exactly as requested, but include folder name for clarity (optional).
+    const message = folderName ? `${parts.join('\n')}\n\nFolder: ${folderName}` : parts.join('\n');
+    return { missingFront, missingBack, message };
+  }
+
+  private alertMissingCoversOnce(folderName: any, message: string) {
+    const key = (folderName ?? '').toString();
+    if (!key) {
+      alert(message);
+      return;
+    }
+    if (this.coverAlertShownForFolder.has(key)) return;
+    this.coverAlertShownForFolder.add(key);
+    alert(message);
+  }
 
   getFileBlob = function (url: string, cb: (arg0: any) => void) {
     var xhr = new XMLHttpRequest();
@@ -672,6 +1640,32 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
   saveEalbumInfo(saveInfo: any) {
     debugger;
+
+    const folderName = String(saveInfo?.FolderName ?? '').trim();
+    const canonical = folderName ? (this.folderDetail.find(x => x.FolderName === folderName) ?? saveInfo) : saveInfo;
+
+    // Track currently processing folder for online/offline status flips
+    this.currentProcessingFolder = canonical;
+
+    // NEW: spread validation gate (do not change existing ealbum flow; just block early)
+    const spreadCheck = this.validateSpreadLimits(saveInfo?.FolderImages, saveInfo?.PageType);
+    if (!spreadCheck.ok) {
+      const msg = spreadCheck.message ?? 'Invalid album page/spread configuration';
+      alert(msg);
+
+      this.setFolderStatus(canonical, "Invalid");
+      canonical.ErrorDetail = msg;
+      const mirror = folderName ? this.allfolderDetail.find(x => x.FolderName === folderName) : null;
+      if (mirror) mirror.ErrorDetail = msg;
+
+      // keep existing "ALL process" behavior: skip this folder and continue with next Open
+      if (this.isAllProcess == true) {
+        this.isAllProcess = false;
+        this.ProcessAllImage();
+      }
+      return;
+    }
+
     if (this.selectedAudioId <= 0) {
       alert("Please choose audio before process");
       return;
@@ -679,87 +1673,147 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
     let eventDate = new Date();
     let addAlbum = new AddAlbumMetaData();
-    if (saveInfo.EmailAddress != undefined && saveInfo.EmailAddress != ""
-      && saveInfo.EmailAddress != null) {
-      this.ealbumService.getPhotographerId(saveInfo.EmailAddress.trim())
-        .subscribe((photographerId: any) => {
-          if (photographerId > 0) {
-            saveInfo.Status = "In Progress";
-            addAlbum.AlbumId = 0;
-            addAlbum.EventTitle = "";//ctrl.eventname.value;
-            addAlbum.CoupleDetail = saveInfo.CoupleName;
-            addAlbum.AudioId = this.selectedAudioId;
-            if (this.selectedAudioId <= 0) {
-              if (this.albums.length > 0) {
-                addAlbum.AudioId = this.albums[0].AudioId
-              }
-            }
-            addAlbum.EventDate = eventDate;
-            addAlbum.Remark = "";
-            addAlbum.EmailAddress = saveInfo.EmailAddress;
-            addAlbum.MobileNo = "";
-            addAlbum.PageType = saveInfo.PageType;
-            addAlbum.PhotographerId = photographerId;
 
-            var allData = this.allfolderDetail.find(x => x.FolderName == saveInfo.FolderName);
-            if (allData != undefined) {
-              allData.Status = "In Progress";
-            }
+    // NOTE: Previously we resolved a "photographerId" by email and blocked processing when not found.
+    // Requirement: albums must always be created under the currently logged-in user (AuthKey user).
+    // API now enforces ownership server-side, so we do not block on email lookup here.
+    this.setFolderStatus(canonical, "In Progress");
 
-            this.ealbumService.addLabAlbumDetail(addAlbum)
-              .subscribe((data: any) => {
-                saveInfo.EAlbumId = data.ealbumId;
-                saveInfo.PhotographerId = photographerId;
-
-
-                this.ProcessRow(saveInfo, data);
-
-              },
-                (error: any) => {
-
-                })
-          }
-          else {
-            saveInfo.Status = "Invalid";
-            saveInfo.ErrorDetail = "Invalid photographer email";
-
-            var allData = this.allfolderDetail.find(x => x.FolderName == saveInfo.FolderName);
-            if (allData != undefined) {
-              allData.Status = "Invalid";
-              allData.ErrorDetail = "Invalid photographer email";
-            }
-
-            if (this.isAllProcess == true) {
-              this.isAllProcess = false;
-              this.ProcessAllImage();
-            }
-          }
-        },
-          error => {
-
-          })
-
-    }
-    else {
-      saveInfo.Status = "Invalid";
-      saveInfo.ErrorDetail = "email id not found/incorrect";
-      var allData = this.allfolderDetail.find(x => x.FolderName == saveInfo.FolderName);
-      if (allData != undefined) {
-        allData.Status = "Invalid";
-        allData.ErrorDetail = "email id not found/incorrect";
-      }
-
-      if (this.isAllProcess == true) {
-        this.isAllProcess = false;
-        this.ProcessAllImage();
+    addAlbum.AlbumId = 0;
+    addAlbum.EventTitle = "";
+    addAlbum.CoupleDetail = canonical.CoupleName;
+    addAlbum.AudioId = this.selectedAudioId;
+    if (this.selectedAudioId <= 0) {
+      if (this.albums.length > 0) {
+        addAlbum.AudioId = this.albums[0].AudioId
       }
     }
+    addAlbum.EventDate = eventDate;
+    addAlbum.Remark = "";
+    addAlbum.EmailAddress = canonical.EmailAddress;
+    addAlbum.MobileNo = "";
+    addAlbum.PageType = canonical.PageType;
+    addAlbum.PhotographerId = 0;
 
+    // Gate album-create API call on internet availability (pause/resume)
+    this.runWhenOnline(canonical, () => this.ealbumService.addLabAlbumDetail(addAlbum))
+      .subscribe((data: any) => {
+        canonical.EAlbumId = data.ealbumId;
+        canonical.PhotographerId = 0;
+        this.ProcessRow(canonical, data);
+      },
+        (error: any) => {
+          const rawMsg =
+            (error?.error?.message ??
+              error?.error?.Message ??
+              error?.message ??
+              (typeof error?.error === 'string' ? error.error : '')
+            )?.toString?.() ?? '';
 
+          const isDuplicate = error?.status === 500 && rawMsg.includes('Duplicate entry');
+
+          alert(
+            isDuplicate
+              ? 'Mobiebook code already exists. Please use a different code.'
+              : 'Something went wrong while saving ebook. Please try again.'
+          );
+        });
   }
 
-  saveImagesObservable(img: File, seq: number, pageType: any, imageType: any, detail: any): Observable<any> {
+  private validateSpreadLimits(images: any[], selectedPageType?: any): { ok: boolean; message?: string } {
+    if (!Array.isArray(images)) return { ok: true };
 
+    const pageTypeText = String(selectedPageType ?? '').trim().toLowerCase();
+    const isPageMode = pageTypeText === 'page';
+
+    let frontTP = 0;
+    let backTP = 0;
+    let emboss = 0;
+    let insidePages = 0;
+
+    images.forEach(img => {
+      if (!this.isImageFileName(img?.name)) return;
+
+      const type = this.pageType(img.name);
+
+      if (type === 'TPFRONT') frontTP++;
+      else if (type === 'TPBACK') backTP++;
+      else if (type === 'EMBOSS') emboss++;
+      else if (type === 'PAGE') insidePages++;
+    });
+
+    // Rule 1: inside pages must be EVEN (only applicable when PageType is "Page")
+    if (isPageMode && (insidePages % 2 !== 0)) {
+      return {
+        ok: false,
+        message: 'Inside pages count must be even'
+      };
+    }
+
+    const insideSpreads = insidePages / 2;
+    const totalSpreads = insideSpreads + frontTP + backTP + emboss;
+
+    // Rule 2: max 72 spreads
+    if (totalSpreads > this.MAX_SPREADS) {
+      return {
+        ok: false,
+        message: `Maximum ${this.MAX_SPREADS} spreads allowed. Current: ${totalSpreads}`
+      };
+    }
+
+    return { ok: true };
+  }
+
+  private inferDefaultAlbumPageType(items: any[]): string {
+    // Default behavior historically was Spread. Only switch to Page when we can
+    // confidently determine the folder contains portrait-only images.
+    try {
+      const safeItems = Array.isArray(items) ? items : [];
+      const imageItems = safeItems
+        .filter((it: any) => it && typeof it.name === 'string' && typeof it.path === 'string')
+        .filter((it: any) => this.isImageFileName(it.name))
+        .filter((it: any) => {
+          const lower = String(it.name).toLowerCase();
+          return lower !== 'album-qr.png' && lower !== 'qr-code.png';
+        });
+
+      if (!imageItems.length) return 'Spread';
+
+      let sizeOf: any;
+      try {
+        sizeOf = (<any>window).require ? (<any>window).require('image-size') : null;
+      } catch {
+        sizeOf = null;
+      }
+      if (!sizeOf) return 'Spread';
+
+      let seenPortrait = false;
+      let seenLandscape = false;
+
+      // Scan all images (stop early on mixed orientation).
+      for (const it of imageItems) {
+        let dim: any;
+        try {
+          dim = sizeOf(it.path);
+        } catch {
+          continue;
+        }
+        const w = Number(dim?.width);
+        const h = Number(dim?.height);
+        if (!(w > 0 && h > 0)) continue;
+        if (h >= w) seenPortrait = true; else seenLandscape = true;
+        if (seenPortrait && seenLandscape) return 'Spread';
+      }
+
+      if (seenPortrait && !seenLandscape) return 'Page';
+      if (seenLandscape && !seenPortrait) return 'Spread';
+      return 'Spread';
+    } catch {
+      return 'Spread';
+    }
+  }
+
+  saveImagesObservable(img: File, seq: number, pageType: any, imageType: any, detail: any, uniqid?: string): Observable<any> {
     const formData: FormData = new FormData();
     formData.append('file', img, img.name);
     formData.append('albumid', detail.EAlbumId.toString());
@@ -767,30 +1821,62 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
     formData.append('viewtype', pageType);
     formData.append('size', this.ealbumService.byteFormat(img.size));
     formData.append('sequenceno', (seq).toString());
-    formData.append('uniqid', Date.now().toString());
+    formData.append('uniqid', (uniqid ?? Date.now().toString()));
     formData.append('parentid', "");
     formData.append('isdisplay', 'true');
-    formData.append('photographerid', detail.PhotographerId.toString());
 
-    return this.ealbumService.upload(formData, "api/EAlbum/AcUploadPhotographerImage");
+    if (pageType === 'EMBOSS') {
+      console.log('[MobieBook][EMBOSS] sending', {
+        fileName: img?.name,
+        seq,
+        pagetype: imageType,
+        viewtype: pageType,
+        albumid: detail?.EAlbumId,
+        photographerid: detail?.PhotographerId
+      });
+    }
 
+    if (this.enableUploadDebugLog) {
+      this.appendJsonLine(detail?.FolderPath, 'upload-debug.jsonl', {
+        ts: new Date().toISOString(),
+        fileName: img?.name,
+        seq,
+        pagetype: imageType,
+        viewtype: pageType,
+        albumid: detail?.EAlbumId,
+        sizeBytes: img?.size
+      });
+    }
+
+    return this.ealbumService.upload(formData, "api/EAlbum/AcUploadImage");
+  }
+
+  appendJsonLine(folderPath: any, fileName: string, data: any) {
+    try {
+      if (!folderPath || !fileName) return;
+      const fullPath = (electronPath?.join ? electronPath.join(folderPath, fileName) : (folderPath + '/' + fileName));
+      const line = JSON.stringify(data) + '\n';
+      if (!electronFs?.appendFile) return;
+      electronFs.appendFile(fullPath, line, (err: any) => {
+        // Intentionally swallow errors; logging should never block uploads.
+      });
+    } catch (error) {
+      // no-op
+    }
   }
 
 
   log(path: any, data: any) {
-    var logFile = electronFs.createWriteStream(path + '/log.txt', { flags: 'w' });
-    // Or 'w' to truncate the file every time the process starts.
-    var logStdout = process.stdout;
-
+    if (!electronFs?.createWriteStream) return;
+    const fullPath = (electronPath?.join ? electronPath.join(path, 'log.txt') : (path + '/log.txt'));
+    const logFile = electronFs.createWriteStream(fullPath, { flags: 'w' });
     setTimeout(() => {
-      let detail = util.format.apply(null, arguments);
       logFile.write(JSON.stringify(data) + '\n');
     }, 1000);
   }
 
 
   readLogText(path: any, itemDetail: any[], name: string) {
-
     let fileExist = this.doesFileExist(path + "/log.txt");
     if (fileExist == true) {
       var rawFile = new XMLHttpRequest();
@@ -830,7 +1916,7 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
                 let fold = rows.find(x => x.FolderName == name);
                 if (fold != undefined) {
-                  fold.ItemLog = JSON.stringify(itemDetail);
+                  fold.ItemLog = JSON.stringify(updateRow); // was itemDetail (didn't reflect merged statuses)
                   if (isDone) {
                     fold.Status = "Done";
                   }
@@ -877,7 +1963,8 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
   }
 
   getAudioDetail() {
-    this.ealbumService.getAudioDropdown()
+    // Gate dropdown API call too (so app doesn't hard-fail when opened offline)
+    this.runWhenOnline(null, () => this.ealbumService.getAudioDropdown())
       .subscribe((data: any) => {
         debugger;
         this.albums = data;
@@ -940,24 +2027,23 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
       let fileDetail = this.audioFiles[i];
       const formData: FormData = new FormData();
       formData.append('file', fileDetail.AudioFile as File, fileDetail.FileName);
-      this.ealbumService.upload(formData, "api/Mp3/AddAudioWin").subscribe(
-        (event: any) => {
-          if (event.type === HttpEventType.UploadProgress) {
-            fileDetail.Progress = Math.round(100 * event.loaded / event.total);
-          } else if (event instanceof HttpResponse) {
-            //this.message = event.body.message;      
-            this.selectedAudioId = event.body;
-            this.getAudioDetail();
+
+      this.runWhenOnline(null, () => this.ealbumService.upload(formData, "api/Mp3/AddAudioWin"))
+        .subscribe(
+          (event: any) => {
+            if (event.type === HttpEventType.UploadProgress) {
+              fileDetail.Progress = Math.round(100 * event.loaded / event.total);
+            } else if (event instanceof HttpResponse) {
+              this.selectedAudioId = event.body;
+              this.getAudioDetail();
+            }
+          },
+          (err: any) => {
+            // non-internet error: keep existing behavior (no reset)
           }
-
-
-        },
-        (err: any) => {
-        });
+        );
     }
-
   }
-
 
   viewMessage(msg: any) {
     alert(msg);
@@ -965,32 +2051,35 @@ export class DisplayFolderComponent implements OnInit, OnDestroy {
 
   reload(detail: any) {
     debugger;
-    //alert('Under development');
     let path = detail.FolderPath;
     var fileTree = FileTree.readDir(path);
     console.log("Filetree: ", fileTree);
 
     let rowDetail = this.folderDetail.find(x => x.FolderName == detail.FolderName);
     if (rowDetail != undefined) {
+      // Mandatory cover validation (popup + mark invalid)
+      const coverErr = this.getMissingCoverError(fileTree, detail.FolderName);
+      if (coverErr) {
+        rowDetail.Counter = this.fileCountSingle(fileTree);
+        rowDetail.FolderImages = fileTree;
+        rowDetail.Status = "Invalid";
+        rowDetail.ErrorDetail = coverErr.message.split('\n')[0];
+        this.alertMissingCoversOnce(detail.FolderName, coverErr.message);
+
+        this.allfolderDetail = this.folderDetail.slice();
+        return;
+      }
+
       let orderFile = this.getTxtFilePath(fileTree);
       rowDetail.Counter = this.fileCountSingle(fileTree);
       rowDetail.FolderImages = fileTree;
       rowDetail.Status = "Open"
       this.readText(orderFile, detail.FolderName);
 
-
       let itemDetail = this.logDetail(fileTree)
-
       this.readLogText(path, itemDetail, detail.FolderName)
 
-      // let displayRow = this.allfolderDetail.find(x => x.FolderName == detail.FolderName);
-      // if(displayRow != null){
-      //   displayRow = rowDetail;
-
-      // }
-      var details = JSON.stringify(this.folderDetail);
-      this.allfolderDetail = JSON.parse(details);
-
+      this.allfolderDetail = this.folderDetail.slice();
     }
   }
 

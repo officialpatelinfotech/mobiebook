@@ -7,6 +7,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { LocalstoreService } from 'src/app/services/localstore.service';
 import { RoutingService } from 'src/app/services/routing.service';
+import { GLOBAL_VARIABLE } from 'src/app/config/globalvariable';
 import { AlbumService } from '../album.service';
 
 @Component({
@@ -25,7 +26,12 @@ export class ValidateCustomerComponent implements OnInit {
   albumId: number;
   msgText: string = '';
   showHelp: boolean = false;
-  uniqcode: string = ""
+  albumUserId: string = "";
+
+  albumDetail: any = null;
+  isAutoValidated: boolean = false;
+  isLoadingPreview: boolean = false;
+  coverImageUrl: string = '';
 
   constructor(
     private fb: FormBuilder,
@@ -53,6 +59,10 @@ export class ValidateCustomerComponent implements OnInit {
           });
 
           this.localStoreService.setItem('oldurl', "/ealbum/validate/" + this.albumId + "/" + param.customerid)
+
+          // Try a zero-friction validation first (many albums don't require email/mobile).
+          // If it succeeds we show the welcome/preview screen; otherwise we fall back to the form.
+          this.tryAutoValidate();
         }
 
         this.userDetail(this.albumId);
@@ -61,6 +71,96 @@ export class ValidateCustomerComponent implements OnInit {
         this.isview = false;
       }
     });
+  }
+
+  getCoverImageUrl(): string {
+    return this.coverImageUrl || '';
+  }
+
+  getPhotographerName(): string {
+    const name = (this.albumDetail?.FullName ?? this.albumDetail?.PhotographerName ?? this.albumDetail?.StudioName ?? '').toString().trim();
+    return name;
+  }
+
+  private loadFrontCover(): void {
+    if (!this.albumId) return;
+    const uid = (this.albumUserId || this.albumDetail?.UserId)?.toString();
+    if (!uid) return;
+
+    this.albumService.getAlbumPageDetail(this.albumId)
+      .subscribe((pages: any[]) => {
+        const list = Array.isArray(pages) ? pages : [];
+        const getViewType = (p: any) => (p?.PageViewType ?? '').toString().trim().toLowerCase();
+
+        const front =
+          list.find(p => getViewType(p) === 'front') ||
+          list.find(p => getViewType(p) === 'tpfront') ||
+          list.slice().sort((a, b) => ((a?.SequenceNo ?? 0) - (b?.SequenceNo ?? 0)))[0];
+
+        const img = (front?.ImageLink ?? '').toString().trim();
+        if (!img) return;
+        this.coverImageUrl = `${GLOBAL_VARIABLE.SERVER_LINK}Resources/${uid}/${this.albumId}/${img}`;
+      },
+        _error => {
+          // Optional preview only; ignore failures.
+        });
+  }
+
+  viewMobiebook(): void {
+    if (!this.albumId) return;
+    this.routingService.routing("/ealbum/view/" + this.albumId);
+  }
+
+  shareApp(): void {
+    const url = window.location.href;
+    const title = this.albumDetail?.CoupleDetail ? `${this.albumDetail.CoupleDetail} Mobiebook` : 'Mobiebook';
+    const text = 'View Mobiebook';
+
+    const nav: any = navigator as any;
+    if (nav && typeof nav.share === 'function') {
+      nav.share({ title, text, url }).catch(() => { });
+      return;
+    }
+
+    // Fallback: copy URL to clipboard.
+    try {
+      if (nav && nav.clipboard && typeof nav.clipboard.writeText === 'function') {
+        nav.clipboard.writeText(url);
+      }
+    } catch { }
+  }
+
+  private tryAutoValidate(): void {
+    const frm = this.customerForm.controls;
+    const code = frm.code?.value;
+    if (!this.albumId || !code) return;
+
+    const req = {
+      AlbumId: this.albumId,
+      UniqCode: code,
+      Email: '',
+      Mobile: ''
+    };
+
+    this.isLoadingPreview = true;
+    this.albumService.loginCustomer(req)
+      .subscribe((data: any) => {
+        this.isLoadingPreview = false;
+        if (data != false) {
+          this.localStoreService.setItem('albumdetail', JSON.stringify(data));
+          this.albumDetail = data;
+          this.isAutoValidated = true;
+
+          // Ensure we have a userId for Resources/{userId}/{albumId}/... cover image.
+          if (!this.albumUserId && data?.UserId != null) {
+            this.albumUserId = data.UserId.toString();
+          }
+          this.loadFrontCover();
+        }
+      },
+        _error => {
+          this.isLoadingPreview = false;
+        });
   }
 
   get f() {
@@ -104,8 +204,13 @@ export class ValidateCustomerComponent implements OnInit {
   userDetail(elabumId) {
     this.albumService.userDetail(elabumId)
       .subscribe((data) => {
-        this.uniqcode = data;
-        this.updateManifest(this.albumId, data);
+        this.albumUserId = data as any;
+        this.updateManifest(this.albumId, this.albumUserId);
+
+        // If we already validated and have album detail, we can now resolve cover.
+        if (this.albumDetail != null && !this.coverImageUrl) {
+          this.loadFrontCover();
+        }
       },
         error => {
           this.msgText = "Please use valide link and code";
@@ -119,7 +224,7 @@ export class ValidateCustomerComponent implements OnInit {
     // var parts = full.split('.');
     // var sub = parts[0];
     var link = document.createElement('link');
-    link.href = "https://api.mobiebook.online/Resources/" + unicode + "/" + id + "/manifest.json?nocache=" + (new Date()).getTime();
+    link.href = `${GLOBAL_VARIABLE.SERVER_LINK}Resources/${unicode}/${id}/manifest.json?nocache=${(new Date()).getTime()}`;
     link.rel = 'manifest';
     document.getElementsByTagName('head')[0].appendChild(link);
 

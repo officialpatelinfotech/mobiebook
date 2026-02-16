@@ -1,0 +1,3 @@
+
+[2026-02-11T11:39:51.567Z] QR generation started | id: MB-DIAG-BG2 | file: _qr_tmp_bg2\album-qr.png | url: http://localhost:4200/#/?q=MB-DIAG-BG2 | bg: path:src\assets\img\icon.png | bgPathExists:true | bgPathSize:5060 | dataUrlValid:false | pageType:page | page:1024x768 | qrTarget:345 | layoutReason:no-images
+[2026-02-11T11:39:52.182Z] QR generated successfully | file: _qr_tmp_bg2\album-qr.png | page: 1024x768 | qrTarget: 345px | bg: path:src\assets\img\icon.png | bgUsed:path

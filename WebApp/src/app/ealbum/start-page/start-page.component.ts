@@ -1,7 +1,6 @@
 import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, ViewContainerRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import Stepper from 'bs-stepper';
-import { Ng2ImgMaxService } from 'ng2-img-max';
 import { from, Observable, ReplaySubject } from 'rxjs';
 import { IMAGE_TYPE, IMG_TYPE, PageViewType } from 'src/app/config/globalvariable';
 import { AlbumImage } from 'src/app/models/addalbum.metadata';
@@ -41,7 +40,6 @@ export class StartPageComponent implements OnInit {
   templateView =[];
   templateOneView:boolean =false;
   constructor(private albumService: EalbumService,
-    private imgResize: Ng2ImgMaxService,
     private cpService: ColorPickerService,
     public vcRef: ViewContainerRef,
     private fb: FormBuilder,

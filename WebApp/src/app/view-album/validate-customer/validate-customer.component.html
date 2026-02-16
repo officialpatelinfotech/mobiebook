@@ -4,69 +4,80 @@
 <div class="newHeaderSection">
     <app-view-toolbar></app-view-toolbar>
 </div>
-<div class="container">
-    <div class="col-sm-12 col-md-4 col-xs-4 offset-md-4">
 
-        <div class="registration-form">
-            <div class="formSectionAll text-center">
-                <form action="#" [formGroup]="customerForm" method="post" role="form" class="php-email-form">
-                    <h1 class="loginHeading">Welcome</h1>
-                    <div class="form-group mred-group" style="padding-top: 25px !important;">
-                        <div class="input-group">
-                            <input type="text" formControlName="code" class="form-control inputloginsets"
-                                placeholder="uniq code" required>
-                        </div>
-                        <div class="invalid-feedback" *ngIf="f.code.touched && f.user.invalid"
-                            style="display: block;padding-left: 15px;" required>
-                            <span *ngIf="f.code.errors.required">Uniq code is required *</span>
-                        </div>
-                    </div>
-                    <div class="form-group mred-group">
-                        <div class="input-group">
-                            <input type="text" formControlName="email"
-                                class="form-control inputloginsets setpassword-radi" id="input-pwd" placeholder="Email">
-                            <div class="input-group-append iconapprence">
-                                <div class="hides">
-                                    <span toggle="#input-pwd" class="field-icon toggle-password"></span>
-                                </div>
-                            </div>
-                        </div>
+<div class="container" *ngIf="isview == true">
+    <div class="col-sm-12 col-md-6 col-xs-12 offset-md-3">
 
-                    </div>
-                    <div class="form-group mred-group">
-                        <div class="input-group">
-                            <input type="text" formControlName="mobile"
-                                class="form-control inputloginsets setpassword-radi" id="input-pwd"
-                                placeholder="Mobile">
-                            <div class="input-group-append iconapprence">
-                                <div class="hides">
-                                    <span toggle="#input-pwd" class="field-icon toggle-password"></span>
-                                </div>
-                            </div>
-                        </div>
+        <!-- Landing / preview (shown when the code is valid without needing extra fields) -->
+        <div class="landing-card" *ngIf="albumDetail != null; else validateForm">
+            <div class="text-center">
+                <h1 class="landing-title">
+                    Welcome to<br>
+                    <span class="landing-highlight">{{albumDetail?.CoupleDetail || 'Our Wedding'}}</span><br>
+                    Mobiebook
+                </h1>
 
-                    </div>
+                <img class="landing-cover" *ngIf="getCoverImageUrl()" [src]="getCoverImageUrl()" alt="Album cover" />
 
+                <button type="button" class="landing-view-btn" style="margin-top: 10px; margin-right: 10px;" (click)="viewMobiebook()">
+                    View Mobiebook
+                </button>
 
-                    <div class="text-center">
-                        <button type="submit" class="Mred-submit-btns" (click)="validate()">Submit</button>
-                    </div>
+                <div class="landing-by" *ngIf="getPhotographerName()">
+                    Photography by {{getPhotographerName()}}
+                </div>
 
+                <!-- <button type="button" class="landing-share-btn" (click)="shareApp()">
+                    Share App
+                </button> -->
 
-                    <div class="setsignuppagelink">
-
-                    </div>
-
-                    <div>
-                        <p>
-
-                        </p>
-                    </div>
-
-                </form>
+                <div class="landing-a2hs" *ngIf="showButton">
+                    <button type="button" class="landing-a2hs-btn" (click)="addToHomeScreen()">Add to home screen</button>
+                </div>
             </div>
         </div>
+
+        <!-- Fallback: existing validation form (for albums that require email/mobile or when auto-validate fails) -->
+        <ng-template #validateForm>
+            <div class="registration-form">
+                <div class="formSectionAll text-center">
+                    <form [formGroup]="customerForm" (ngSubmit)="validate()" role="form" class="php-email-form">
+                        <h1 class="loginHeading">Welcome</h1>
+                        <div class="form-group mred-group" style="padding-top: 25px !important;">
+                            <div class="input-group">
+                                <input type="text" formControlName="code" class="form-control inputloginsets"
+                                    placeholder="uniq code" required>
+                            </div>
+                            <div class="invalid-feedback" *ngIf="f.code.touched && f.code.invalid"
+                                style="display: block;padding-left: 15px;" required>
+                                <span *ngIf="f.code.errors.required">Uniq code is required *</span>
+                            </div>
+                        </div>
+                        <div class="form-group mred-group">
+                            <div class="input-group">
+                                <input type="text" formControlName="email"
+                                    class="form-control inputloginsets setpassword-radi" placeholder="Email">
+                            </div>
+                        </div>
+                        <div class="form-group mred-group">
+                            <div class="input-group">
+                                <input type="text" formControlName="mobile"
+                                    class="form-control inputloginsets setpassword-radi" placeholder="Mobile">
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="Mred-submit-btns">Submit</button>
+                        </div>
+
+                        <div class="landing-a2hs" *ngIf="showButton">
+                            <button type="button" class="landing-a2hs-btn" (click)="addToHomeScreen()">Add to home screen</button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </ng-template>
+
     </div>
 </div>
-
-<button *ngIf="this.showButton" (click)="addToHomeScreen()">Add to home screen</button>

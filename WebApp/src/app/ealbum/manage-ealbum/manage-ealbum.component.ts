@@ -72,7 +72,9 @@ export class ManageEalbumComponent implements OnInit {
         this.albums = data.ViewAlbums;
       },
         error => {
-
+          this.totalRecord = 0;
+          this.albums = [];
+          this.notificationService.showError(error, GLOBAL_VARIABLE.ERROR_MESSAGE_TYPE);
         });
   }
 
@@ -102,7 +104,7 @@ export class ManageEalbumComponent implements OnInit {
         this.popUpEalbum = true;
       },
         error => {
-
+          this.notificationService.showError(error, GLOBAL_VARIABLE.ERROR_MESSAGE_TYPE);
         });
   }
 
@@ -151,7 +153,7 @@ export class ManageEalbumComponent implements OnInit {
 
     // let urlMain = "https://api.mobiebook.online/resources/"+userDetail.UserId+"/"+detail.EAlbumId+"/index.html?id="+detail.UniqId;
     //this.clipboardService.copyFromContent(url+"/#/ealbum/validate/"+detail.EAlbumId+"/"+detail.UniqId);
-    let urlMain = "https://mobiebook.online/#/?q=" + detail.UniqId;
+    let urlMain = url + "/#/?q=" + detail.UniqId;
     this.clipboardService.copyFromContent(urlMain);
     setTimeout(() => {
       this.notificationService.showSuccess("Link Copied", GLOBAL_VARIABLE.SUCCESS);

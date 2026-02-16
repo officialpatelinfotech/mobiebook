@@ -117,20 +117,9 @@ addBtn.addEventListener('click', (e) => {
     if ('serviceWorker' in navigator) {
       // console.log(localStorage.getItem('customer_studio_id'));
       window.addEventListener('load', function () {
-        let url = window.location.href.split('?');
-        if (url.length > 0) {
-          let uniqIdSp = url[url.length - 1];
-          let mainUrl = url[url.length - 2];
-
-          let uniqId = uniqIdSp.split('=');
-          let idDetail = uniqId[uniqId.length - 1];
-
-          let ids = mainUrl.split('/');
-          let folderId = ids[ids.length - 2];
-          let mainfolderId = ids[ids.length - 3];
-
-          var a = 'https://api.mobiebook.online/resources/' + mainfolderId + "/" + folderId + '/sw.js'
-          navigator.serviceWorker.register(a).then(function (registration) {
+        // Register the service worker from the current folder so this page works on
+        // localhost as well as production.
+        navigator.serviceWorker.register('sw.js').then(function (registration) {
             // Registration was successful
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
           }, function (err) {
@@ -139,11 +128,28 @@ addBtn.addEventListener('click', (e) => {
           }).catch(function (err) {
             console.log(err)
           });
-        }
       });
 
     } else {
       console.log('service worker is not supported');
+    }
+
+    function getWebAppBaseUrl() {
+      const host = (window.location.hostname || '').toLowerCase();
+      const protocol = window.location.protocol || 'https:';
+
+      // Local dev: API runs on 5000, Angular runs on 4200.
+      if (host === 'localhost' || host === '127.0.0.1') {
+        return 'http://localhost:4200';
+      }
+
+      // Prod: page is served from api.<domain>, but the WebApp is on <domain>.
+      if (host.startsWith('api.')) {
+        return protocol + '//' + host.substring(4);
+      }
+
+      // Fallback: same origin.
+      return window.location.origin;
     }
 
     function load_home() {
@@ -161,7 +167,8 @@ addBtn.addEventListener('click', (e) => {
 
         var iframe = document.createElement('iframe');
         iframe.setAttribute("style", "position:fixed; top:0; left:0; bottom:0; right:0; width:100%; height:100%; border:none; margin:0; padding:0; overflow:hidden; z-index:999999;");
-        iframe.src = "https://mobiebook.online/#/ealbum/validate/" + folderId + "/" + idDetail;
+        var webBase = getWebAppBaseUrl();
+        iframe.src = webBase + "/#/ealbum/validate/" + folderId + "/" + idDetail;
 
         // div tag in which iframe will be added should have id attribute with value myDIV
         document.getElementById("frame").appendChild(iframe);

@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { GLOBAL_VARIABLE } from 'src/app/config/globalvariable';
 
 @Component({
   selector: 'app-validate-url',
@@ -31,7 +32,7 @@ export class ValidateUrlComponent implements OnInit {
     debugger;
     this.authService.getEalbumUniq(this.uniqCode)
         .subscribe((data: any) => {
-          let urlMain = "https://api.mobiebook.online/resources/"+data.UserId+"/"+data.EAlbumId+"/index.html?id="+data.UniqId;
+          let urlMain = `${GLOBAL_VARIABLE.SERVER_LINK}Resources/${data.UserId}/${data.EAlbumId}/index.html?id=${data.UniqId}`;
          
           window.location.href = urlMain;
         },

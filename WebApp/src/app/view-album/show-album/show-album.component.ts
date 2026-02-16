@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { GLOBAL_VARIABLE, IMG_TYPE, PageViewType } from 'src/app/config/globalvariable';
 import { LocalstoreService } from 'src/app/services/localstore.service';
@@ -13,6 +13,8 @@ declare var $: any;
   styleUrls: ['./show-album.component.css']
 })
 export class ShowAlbumComponent implements OnInit {
+  @ViewChild('container', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
+
   albumDetail: any;
   server = GLOBAL_VARIABLE.SERVER_LINK;
   pageDetail: any;
@@ -20,6 +22,7 @@ export class ShowAlbumComponent implements OnInit {
   serverLink = GLOBAL_VARIABLE.SERVER_LINK + "Resources/";
   audio = new Audio();
   imageDetail: any[] = [];
+  private flipbook: any;
 
 
   constructor(
@@ -45,11 +48,36 @@ export class ShowAlbumComponent implements OnInit {
     this.getAlbumDetail();
   }
 
+  private normalizePageViewType(v: any): string {
+    return (v ?? '').toString().trim().toUpperCase();
+  }
+
   getAlbumDetail() {
     this.albumService.getAlbumPageDetail(this.albumDetail.EAlbumId)
       .subscribe((data: any) => {
         this.isView = true;
         this.pageDetail = data;
+
+        const pageTypes = Array.from(new Set(
+          (this.pageDetail || []).map(p => this.normalizePageViewType(p?.PageViewType)).filter(Boolean)
+        ));
+        const embossCount = (this.pageDetail || []).filter(p =>
+          this.normalizePageViewType(p?.PageViewType) === PageViewType.Emboss
+        ).length;
+        // Debug helper: if EMBOSS isn't in the API response, the UI cannot display it.
+        if (embossCount === 0) {
+          console.log('[MobieBook][EMBOSS] Not present in GetAlbumPageDetail response', {
+            albumId: this.albumDetail?.EAlbumId,
+            pageViewTypes: pageTypes
+          });
+        } else {
+          console.log('[MobieBook][EMBOSS] Present in GetAlbumPageDetail response', {
+            albumId: this.albumDetail?.EAlbumId,
+            embossCount,
+            pageViewTypes: pageTypes
+          });
+        }
+
         this.pageDetail.forEach(x => {
           x.ImageLink = this.serverLink + this.albumDetail.UserId + "/" + x.AlbumId + "/" + x.ImageLink
         })
@@ -62,11 +90,10 @@ export class ShowAlbumComponent implements OnInit {
   }
 
   albumDisplay() {
-    debugger;
     let albums = []
     let blankImage = GLOBAL_VARIABLE.DEFAULT_IMG_TP;
-    let front = this.pageDetail.find(z => z.PageViewType == PageViewType.Front);
-    let back = this.pageDetail.find(z => z.PageViewType == PageViewType.Back);
+    let front = this.pageDetail.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.Front);
+    let back = this.pageDetail.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.Back);
     if(front != undefined){
       albums.push({ src: front.ImageLink, thumb: front.ImageLink, title: '' })
     }
@@ -74,8 +101,8 @@ export class ShowAlbumComponent implements OnInit {
       albums.push({ src: blankImage, thumb: blankImage, title: '' })
     }
 
-    let frontTp = this.pageDetail.find(z => z.PageViewType == PageViewType.TPFront);
-    let backTp = this.pageDetail.find(z => z.PageViewType == PageViewType.TPBack);
+    let frontTp = this.pageDetail.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.TPFront);
+    let backTp = this.pageDetail.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.TPBack);
     if (frontTp != undefined) {
       if (this.albumDetail.PageType !== IMG_TYPE.Spread) {
         albums.push({ src: blankImage, thumb: blankImage, title: '' })
@@ -83,9 +110,21 @@ export class ShowAlbumComponent implements OnInit {
       albums.push({ src: frontTp.ImageLink, thumb: frontTp.ImageLink, title: '' })
     }
 
+    const embossPages = (this.pageDetail || []).filter(z =>
+      (this.normalizePageViewType(z?.PageViewType) === PageViewType.Emboss)
+    );
+    if (embossPages.length > 0) {
+      embossPages.forEach(p => {
+        if (this.albumDetail.PageType !== IMG_TYPE.Spread) {
+          albums.push({ src: blankImage, thumb: blankImage, title: '' })
+        }
+        albums.push({ src: p.ImageLink, thumb: p.ImageLink, title: '' })
+      })
+    }
+
     let sortbySequence = [].slice.call(this.pageDetail).sort((a, b) => (a.SequenceNo < b.SequenceNo ? -1 : 1));
     sortbySequence.forEach(element => {
-      if (element.PageViewType === PageViewType.Page
+      if (this.normalizePageViewType(element?.PageViewType) === PageViewType.Page
         && element.IsAlbumView == true) {
         albums.push({ src: element.ImageLink, thumb: element.ImageLink, title: '' })
       }
@@ -109,8 +148,21 @@ export class ShowAlbumComponent implements OnInit {
 
 
     setTimeout(() => {
+      const $container = $(this.containerRef?.nativeElement);
+      if (!$container || $container.length === 0) {
+        return;
+      }
 
-      $("#container").flipBook({
+      try {
+        if (this.flipbook && typeof this.flipbook.dispose === 'function') {
+          this.flipbook.dispose();
+        }
+      } catch {
+        // ignore
+      }
+      $container.empty();
+
+      this.flipbook = $container.flipBook({
         pages: albums,
         viewMode: '3d',
         btnDownloadPages: { enabled: false },
@@ -130,9 +182,10 @@ export class ShowAlbumComponent implements OnInit {
         backgroundColor: "#150000",
         // skin:"gradient",
         pageFlipDuration: 2,
+        // IMPORTANT: app uses HashLocationStrategy, so flipBook hash deeplinking
+        // breaks Angular routing.
         deeplinking: {
-          enabled: true,
-          prefix: ""
+          enabled: false
         },
         skin: "dark"
       });
@@ -153,11 +206,17 @@ export class ShowAlbumComponent implements OnInit {
 
 
   runMp3() {
-    debugger;
-    this.audio.src = this.server + "Resources/Mp3Files/" + this.albumDetail.Mp3Link;
+    const mp3 = (this.albumDetail?.Mp3Link ?? '').toString().trim();
+    if (!mp3) {
+      return;
+    }
+    this.audio.src = this.server + "Resources/Mp3Files/" + mp3;
     this.audio.load();
     this.audio.loop = true;
-    this.audio.play();
+    const p = this.audio.play();
+    if (p && typeof (p as any).catch === 'function') {
+      (p as any).catch(() => {});
+    }
   }
 
   stopMp3() {

@@ -326,7 +326,8 @@ namespace Photomate.Domain.EAlbum
 
             param["ealbum_id"] = new MySqlParameter("ealbum_id", album.AlbumId);
             param["eventtitle"] = new MySqlParameter("eventtitle", album.EventTitle);
-            param["userid"] = new MySqlParameter("userid", album.PhotographerId);
+            // IMPORTANT: Ensure album ownership is always the authenticated user.
+            param["userid"] = new MySqlParameter("userid", userId);
             param["coupledetail"] = new MySqlParameter("coupledetail", album.CoupleDetail);
             param["audioid"] = new MySqlParameter("audioid", album.AudioId);
             param["eventdate"] = new MySqlParameter("eventdate", album.EventDate);

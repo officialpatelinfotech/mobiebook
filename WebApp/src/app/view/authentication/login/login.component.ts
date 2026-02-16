@@ -115,7 +115,7 @@ export class LoginComponent implements OnInit {
    
     this.authService.getEalbumUniq(this.uniqCode)
         .subscribe((data: any) => {
-          let urlMain = "https://api.mobiebook.online/resources/"+data.UserId+"/"+data.EAlbumId+"/index.html?id="+data.UniqId;
+          let urlMain = `${GLOBAL_VARIABLE.SERVER_LINK}Resources/${data.UserId}/${data.EAlbumId}/index.html?id=${data.UniqId}`;
          
           window.location.href = urlMain;
         },

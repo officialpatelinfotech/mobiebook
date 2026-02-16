@@ -19,6 +19,10 @@ export class ViewAlbumComponent implements OnInit {
     this.isView = true;
   }
 
+  private normalizePageViewType(v: any): string {
+    return (v ?? '').toString().trim().toUpperCase();
+  }
+
   ngOnInit(): void {
     setTimeout(() => {
       this.albumDisplay();
@@ -35,8 +39,9 @@ export class ViewAlbumComponent implements OnInit {
     debugger;
     let blankImage = GLOBAL_VARIABLE.DEFAULT_IMG_TP;
     let albums = [];
-    let front = this.pages.find(z => z.PageViewType == PageViewType.Front);
-    let back = this.pages.find(z => z.PageViewType == PageViewType.Back);
+    const pages = Array.isArray(this.pages) ? this.pages : [];
+    let front = pages.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.Front);
+    let back = pages.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.Back);
     if(front != undefined){
       albums.push({ src: front.ImageLink, thumb: front.ImageLink, title: '' })
     }
@@ -45,8 +50,8 @@ export class ViewAlbumComponent implements OnInit {
     }
     
 
-    let frontTp = this.pages.find(z => z.PageViewType == PageViewType.TPFront);
-    let backTp = this.pages.find(z => z.PageViewType == PageViewType.TPBack);
+    let frontTp = pages.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.TPFront);
+    let backTp = pages.find(z => this.normalizePageViewType(z?.PageViewType) === PageViewType.TPBack);
     if (frontTp != undefined) {
       if (this.albumdetail.PageType !== IMG_TYPE.Spread) {
         albums.push({ src: blankImage, thumb: blankImage, title: '' })
@@ -54,9 +59,21 @@ export class ViewAlbumComponent implements OnInit {
       albums.push({ src: frontTp.ImageLink, thumb: frontTp.ImageLink, title: '' })
     }
 
-    let sortbySequence = [].slice.call(this.pages).sort((a, b) => (a.SequenceNo < b.SequenceNo ? -1 : 1));
+    const embossPages = pages.filter(z =>
+      (this.normalizePageViewType(z?.PageViewType) === PageViewType.Emboss)
+    );
+    if (embossPages.length > 0) {
+      embossPages.forEach(p => {
+        if (this.albumdetail.PageType !== IMG_TYPE.Spread) {
+          albums.push({ src: blankImage, thumb: blankImage, title: '' })
+        }
+        albums.push({ src: p.ImageLink, thumb: p.ImageLink, title: '' })
+      })
+    }
+
+    let sortbySequence = [].slice.call(pages).sort((a, b) => (a.SequenceNo < b.SequenceNo ? -1 : 1));
     sortbySequence.forEach(element => {
-      if (element.PageViewType == PageViewType.Page
+      if (this.normalizePageViewType(element?.PageViewType) === PageViewType.Page
         && element.IsAlbumView == true) {
         albums.push({ src: element.ImageLink, thumb: element.ImageLink, title: '' })
       }
@@ -113,10 +130,17 @@ export class ViewAlbumComponent implements OnInit {
 
   runMp3() {
     debugger;
-    this.audio.src = this.server + "Resources/Mp3Files/" + this.albumdetail.Mp3Link;
+    const mp3 = (this.albumdetail?.Mp3Link ?? '').toString().trim();
+    if (!mp3) {
+      return;
+    }
+    this.audio.src = this.server + "Resources/Mp3Files/" + mp3;
     this.audio.load();
     this.audio.loop = true;
-    this.audio.play();
+    const p = this.audio.play();
+    if (p && typeof (p as any).catch === 'function') {
+      (p as any).catch(() => {});
+    }
   }
 
   stopMp3() {
